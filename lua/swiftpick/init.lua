@@ -36,7 +36,10 @@ function M.remove(filename)
 end
 
 function M.open_picker()
-  M.picker.open(M.get_all())
+  local cwd = vim.fn.getcwd()
+  M.picker.open(M.get_all(), function(new_abs_paths)
+    M.storage.set_filenames_for_cwd(M.cfg.storage_file_path, cwd, new_abs_paths)
+  end)
 end
 
 return M

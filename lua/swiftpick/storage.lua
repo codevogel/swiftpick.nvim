@@ -95,4 +95,11 @@ function M.remove_filename_for_cwd(storage_file_path, cwd, filename)
   write_data(storage_file_path, data)
 end
 
+--- Replaces the entire list of filenames for the given cwd.
+function M.set_filenames_for_cwd(storage_file_path, cwd, filenames)
+  local data = read_data(storage_file_path)
+  data[cwd] = filenames
+  write_data(storage_file_path, data)
+end
+
 return M
