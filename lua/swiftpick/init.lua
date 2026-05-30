@@ -39,6 +39,12 @@ function M.open_picker()
   local cwd = vim.fn.getcwd()
   M.picker.open(M.get_all(), function(new_abs_paths)
     M.storage.set_filenames_for_cwd(M.cfg.storage_file_path, cwd, new_abs_paths)
+  end, function(path)
+    M.storage.add_path_for_cwd(M.cfg.storage_file_path, cwd, path)
+    return M.storage.get_filenames_for_cwd(M.cfg.storage_file_path, cwd)
+  end, function(path)
+    M.storage.remove_filename_for_cwd(M.cfg.storage_file_path, cwd, path)
+    return M.storage.get_filenames_for_cwd(M.cfg.storage_file_path, cwd)
   end)
 end
 

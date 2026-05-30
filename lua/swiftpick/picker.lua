@@ -3,9 +3,10 @@ local M = {}
 local HINT_NS = vim.api.nvim_create_namespace("swiftpick_hints")
 local HINT_LABELS = { "h", "j", "k", "l" }
 
-local FOOTER_NORMAL = " [hjkl | 1-9] open · [f] filter · [e] edit"
+local FOOTER_NORMAL = " [hjkl | 1-9] open · [a/A] add · [r/R] remove · [e] edit"
+local FOOTER_ADD_AT = " add at: [hjkl | 1-9] pick slot · [Esc] cancel"
+local FOOTER_REMOVE_AT = " remove at: [hjkl | 1-9] pick slot · [Esc] cancel"
 
-local FOOTER_FILTERED = " [hjkl | 1-9] open · [f] filter · [r] reset · [e] edit "
 local FOOTER_EDIT = " [CR] open curr line · [:w] save · [Esc] exit edit "
 local TITLE_NORMAL = " swiftpick "
 local TITLE_EDIT = " swiftpick [edit] "
@@ -33,11 +34,11 @@ local state = {
   buf = nil,
   win = nil,
   entries = {}, -- all entries: { path = string, display = string }
-  filtered = {}, -- currently visible subset (mirrors entries when no filter is active)
-  filter_buf = nil,
-  filter_win = nil,
   cwd = nil, -- working directory when picker was opened
+  origin_buf = nil, -- absolute path of the buffer that was active when the picker opened
   save_fn = nil, -- callback(abs_paths) called when the user saves in edit mode
+  add_fn = nil, -- callback(path) -> abs_paths[] called when user presses 'a'
+  remove_fn = nil, -- callback(path) -> abs_paths[] called when user presses 'r'
   edit_mode = false,
   deleted = {}, -- reserved for future deletion support
 }
@@ -82,24 +83,6 @@ local function get_centered_win_config(width, height)
   }
 end
 
-local function fuzzy_match(query, str)
-  if query == "" then
-    return true
-  end
-  query = query:lower()
-  str = str:lower()
-  local qi = 1
-  for si = 1, #str do
-    if str:sub(si, si) == query:sub(qi, qi) then
-      qi = qi + 1
-      if qi > #query then
-        return true
-      end
-    end
-  end
-  return false
-end
-
 local function apply_hints(buf)
   vim.api.nvim_buf_clear_namespace(buf, HINT_NS, 0, -1)
   local count = vim.api.nvim_buf_line_count(buf)
@@ -113,28 +96,6 @@ local function apply_hints(buf)
   end
 end
 
-local function apply_filter_hints(buf)
-  vim.api.nvim_buf_clear_namespace(buf, HINT_NS, 0, -1)
-  if vim.api.nvim_buf_line_count(buf) >= 1 then
-    vim.api.nvim_buf_set_extmark(buf, HINT_NS, 0, 0, {
-      sign_text = ">",
-      sign_hl_group = "Comment",
-    })
-  end
-end
-
-local function is_filtered()
-  return #state.filtered ~= #state.entries
-end
-
-local function update_footer()
-  if not (state.win and vim.api.nvim_win_is_valid(state.win)) then
-    return
-  end
-  local footer = is_filtered() and FOOTER_FILTERED or FOOTER_NORMAL
-  vim.api.nvim_win_set_config(state.win, { footer = footer, footer_pos = "center" })
-end
-
 local function set_normal_title_footer()
   if not (state.win and vim.api.nvim_win_is_valid(state.win)) then
     return
@@ -142,7 +103,7 @@ local function set_normal_title_footer()
   vim.api.nvim_win_set_config(state.win, {
     title = TITLE_NORMAL,
     title_pos = "center",
-    footer = is_filtered() and FOOTER_FILTERED or FOOTER_NORMAL,
+    footer = FOOTER_NORMAL,
     footer_pos = "center",
   })
 end
@@ -171,25 +132,145 @@ local function update_picker_buf(entries_list)
   vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, lines)
   vim.bo[state.buf].modifiable = false
   apply_hints(state.buf)
-  update_footer()
   if state.win and vim.api.nvim_win_is_valid(state.win) then
     vim.api.nvim_win_set_cursor(state.win, { 1, 0 })
   end
 end
 
-local function close_filter()
-  if state.filter_win and vim.api.nvim_win_is_valid(state.filter_win) then
-    vim.api.nvim_win_close(state.filter_win, true)
-    state.filter_win = nil
+local function has_entry(path)
+  for _, entry in ipairs(state.entries) do
+    if entry.path == path then
+      return true
+    end
   end
-  if state.filter_buf and vim.api.nvim_buf_is_valid(state.filter_buf) then
-    vim.api.nvim_buf_delete(state.filter_buf, { force = true })
-    state.filter_buf = nil
+  return false
+end
+
+local function resize_win()
+  if not (state.win and vim.api.nvim_win_is_valid(state.win)) then
+    return
+  end
+  local new_height = math.max(1, math.min(10, #state.entries))
+  local cfg = vim.api.nvim_win_get_config(state.win)
+  local width = cfg.width
+  local row = math.floor((vim.o.lines - new_height) / 2)
+  local col = math.floor((vim.o.columns - width) / 2)
+  vim.api.nvim_win_set_config(state.win, { relative = "editor", height = new_height, row = row, col = col })
+end
+
+local function refresh_entries(new_abs_paths)
+  state.entries = {}
+  for _, abs_path in ipairs(new_abs_paths) do
+    local display = abs_path == "" and "<empty>" or relpath(state.cwd, abs_path)
+    table.insert(state.entries, { path = abs_path, display = display })
+  end
+  update_picker_buf(state.entries)
+  resize_win()
+end
+
+local function do_add()
+  if not (state.add_fn and state.origin_buf and state.origin_buf ~= "") then
+    return
+  end
+  if has_entry(state.origin_buf) then
+    return
+  end
+  local new_paths = state.add_fn(state.origin_buf)
+  if new_paths then
+    refresh_entries(new_paths)
   end
 end
 
+local function do_remove()
+  if not (state.remove_fn and state.origin_buf and state.origin_buf ~= "") then
+    return
+  end
+  if not has_entry(state.origin_buf) then
+    return
+  end
+  local new_paths = state.remove_fn(state.origin_buf)
+  if new_paths then
+    refresh_entries(new_paths)
+  end
+end
+
+local function get_position_from_char(char)
+  for i, label in ipairs(HINT_LABELS) do
+    if char == label then
+      return i
+    end
+  end
+  local n = tonumber(char)
+  if n and n >= 1 and n <= 9 then
+    return n
+  end
+  return nil
+end
+
+local function persist_entries()
+  if state.save_fn then
+    local abs_paths = {}
+    for _, e in ipairs(state.entries) do
+      table.insert(abs_paths, e.path)
+    end
+    state.save_fn(abs_paths)
+  end
+end
+
+local function await_position(footer, callback)
+  if not (state.win and vim.api.nvim_win_is_valid(state.win)) then
+    return
+  end
+  vim.api.nvim_win_set_config(state.win, { footer = footer, footer_pos = "center" })
+  vim.cmd("redraw")
+  local ok, input = pcall(vim.fn.getchar)
+  set_normal_title_footer()
+  if not ok then
+    return
+  end
+  if type(input) == "number" and input == 27 then
+    return
+  end
+  local char = type(input) == "number" and vim.fn.nr2char(input) or tostring(input)
+  local pos = get_position_from_char(char)
+  if pos then
+    callback(pos)
+  end
+end
+
+local function do_add_at()
+  if not (state.origin_buf and state.origin_buf ~= "") then
+    return
+  end
+  await_position(FOOTER_ADD_AT, function(pos)
+    local new_entries = {}
+    for i = 1, pos - 1 do
+      new_entries[i] = state.entries[i] or { path = "", display = "<empty>" }
+    end
+    new_entries[pos] = { path = state.origin_buf, display = relpath(state.cwd, state.origin_buf) }
+    for i = pos, #state.entries do
+      new_entries[i + 1] = state.entries[i]
+    end
+    state.entries = new_entries
+    persist_entries()
+    update_picker_buf(state.entries)
+    resize_win()
+  end)
+end
+
+local function do_remove_at()
+  await_position(FOOTER_REMOVE_AT, function(pos)
+    if pos > #state.entries then
+      return
+    end
+    table.remove(state.entries, pos)
+    persist_entries()
+    update_picker_buf(state.entries)
+    resize_win()
+  end)
+end
+
 local function close_picker()
-  close_filter()
   show_cursor()
   if state.win and vim.api.nvim_win_is_valid(state.win) then
     vim.api.nvim_win_close(state.win, true)
@@ -207,8 +288,8 @@ local function open_file(path)
 end
 
 local function open_entry_by_index(idx)
-  local entry = state.filtered[idx]
-  if entry then
+  local entry = state.entries[idx]
+  if entry and entry.path ~= "" then
     open_file(entry.path)
   end
 end
@@ -219,108 +300,6 @@ local function open_entry_at_cursor()
   end
   local line = vim.api.nvim_win_get_cursor(state.win)[1]
   open_entry_by_index(line)
-end
-
-local function open_filter()
-  if state.filter_win and vim.api.nvim_win_is_valid(state.filter_win) then
-    return
-  end
-
-  local cfg = vim.api.nvim_win_get_config(state.win)
-  local picker_row = cfg.row
-  local picker_col = cfg.col
-  -- Neovim may return row/col as 1-element arrays in some configurations.
-  if type(picker_row) == "table" then
-    picker_row = picker_row[1]
-  end
-  if type(picker_col) == "table" then
-    picker_col = picker_col[1]
-  end
-
-  -- With border="rounded" the bottom border sits at picker_row + picker_height,
-  -- so the filter float content (with its own top border) starts one row below that.
-  local filter_row = picker_row + cfg.height + 1
-
-  state.filter_buf = vim.api.nvim_create_buf(false, true)
-  -- Disable completion popups (blink.cmp, nvim-cmp, etc.) in the filter buffer.
-  vim.b[state.filter_buf].completion = false
-  vim.bo[state.filter_buf].omnifunc = ""
-  vim.bo[state.filter_buf].completefunc = ""
-  state.filter_win = vim.api.nvim_open_win(state.filter_buf, true, {
-    relative = "editor",
-    row = filter_row,
-    col = picker_col,
-    width = cfg.width,
-    height = 1,
-    border = "rounded",
-    style = "minimal",
-  })
-
-  show_cursor()
-  apply_filter_hints(state.buf)
-
-  local iopts = { noremap = true, silent = true, buffer = state.filter_buf }
-
-  -- <Esc>/<C-c>: close filter, keep filtered list, return focus to picker
-  local function dismiss_filter()
-    if #state.filtered == 0 then
-      state.filtered = state.entries
-      update_picker_buf(state.entries)
-    end
-    close_filter()
-    apply_hints(state.buf)
-    update_footer()
-    hide_cursor()
-    if state.win and vim.api.nvim_win_is_valid(state.win) then
-      vim.api.nvim_set_current_win(state.win)
-    end
-    vim.cmd("stopinsert")
-  end
-
-  -- <CR>: open the first (top) entry in the filtered list.
-  -- If there are no matches, reset the filter and return to the picker instead.
-  vim.keymap.set("i", "<CR>", function()
-    if #state.filtered == 0 then
-      state.filtered = state.entries
-      update_picker_buf(state.entries)
-      dismiss_filter()
-    else
-      close_filter()
-      open_entry_by_index(1)
-    end
-  end, iopts)
-
-  vim.keymap.set("i", "<Esc>", dismiss_filter, iopts)
-  vim.keymap.set("i", "<C-c>", dismiss_filter, iopts)
-
-  -- <BS> when buffer is empty: dismiss filter
-  vim.keymap.set("i", "<BS>", function()
-    local line = vim.api.nvim_buf_get_lines(state.filter_buf, 0, 1, false)[1] or ""
-    if line == "" then
-      dismiss_filter()
-    else
-      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<BS>", true, false, true), "n", false)
-    end
-  end, iopts)
-
-  -- Re-filter the picker on every keystroke
-  vim.api.nvim_create_autocmd("TextChangedI", {
-    buffer = state.filter_buf,
-    callback = function()
-      local query = vim.api.nvim_buf_get_lines(state.filter_buf, 0, 1, false)[1] or ""
-      local filtered = {}
-      for _, entry in ipairs(state.entries) do
-        if fuzzy_match(query, entry.display) then
-          table.insert(filtered, entry)
-        end
-      end
-      state.filtered = filtered
-      update_picker_buf(filtered)
-      apply_filter_hints(state.buf)
-    end,
-  })
-
-  vim.cmd("startinsert")
 end
 
 -- Forward declarations needed for mutual reference between enter/exit_edit_mode.
@@ -363,7 +342,6 @@ exit_edit_mode = function()
   pcall(vim.api.nvim_clear_autocmds, { group = "swiftpick_edit", buffer = state.buf })
   state.edit_mode = false
   vim.bo[state.buf].buftype = "nofile"
-  state.filtered = state.entries
   update_picker_buf(state.entries)
   if state.win and vim.api.nvim_win_is_valid(state.win) then
     vim.wo[state.win].cursorline = false
@@ -385,7 +363,10 @@ exit_edit_mode = function()
     end)
   end
   nmap("<CR>", open_entry_at_cursor)
-  nmap("f", open_filter)
+  nmap("a", do_add)
+  nmap("r", do_remove)
+  nmap("A", do_add_at)
+  nmap("R", do_remove_at)
   nmap("e", enter_edit_mode)
   nmap("q", close_picker)
   nmap("<Esc>", close_picker)
@@ -397,9 +378,7 @@ enter_edit_mode = function()
     return
   end
   state.edit_mode = true
-  -- Always edit the full entry list, even if a filter was active.
   -- update_picker_buf sets modifiable=false, so set buftype/modifiable after.
-  state.filtered = state.entries
   update_picker_buf(state.entries)
   vim.bo[state.buf].buftype = "acwrite"
   vim.bo[state.buf].modifiable = true
@@ -455,17 +434,11 @@ local function setup_keymaps(buf)
   -- Open file at cursor line
   map("<CR>", open_entry_at_cursor)
 
-  -- Open fuzzy filter bar
-  map("f", open_filter)
-
-  -- Reset filter to original entry list
-  map("r", function()
-    if not is_filtered() then
-      return
-    end
-    state.filtered = state.entries
-    update_picker_buf(state.entries)
-  end)
+  -- Add/remove origin buffer
+  map("a", do_add)
+  map("r", do_remove)
+  map("A", do_add_at)
+  map("R", do_remove_at)
 
   -- Enter edit mode
   map("e", enter_edit_mode)
@@ -475,32 +448,27 @@ local function setup_keymaps(buf)
   map("<Esc>", close_picker)
 end
 
-function M.open(abs_entries, save_fn)
+function M.open(abs_entries, save_fn, add_fn, remove_fn)
   local cwd = vim.fn.getcwd()
   state.entries = {}
-  state.filtered = {}
   state.deleted = {}
   state.cwd = cwd
+  state.origin_buf = vim.api.nvim_buf_get_name(0)
   state.save_fn = save_fn
+  state.add_fn = add_fn
+  state.remove_fn = remove_fn
   state.edit_mode = false
 
   local longest = 0
   for _, abs_path in ipairs(abs_entries) do
-    local display = relpath(cwd, abs_path)
+    local display = abs_path == "" and "<empty>" or relpath(cwd, abs_path)
     table.insert(state.entries, { path = abs_path, display = display })
     longest = math.max(longest, #display)
   end
 
-  if #state.entries == 0 then
-    vim.notify("swiftpick: no entries", vim.log.levels.INFO)
-    return
-  end
-
-  state.filtered = state.entries
-
   local numberwidth = 3
-  local width = math.min(longest + numberwidth + 2, vim.o.columns - 4)
-  local height = math.min(10, #state.entries)
+  local width = math.max(15, math.min(longest + numberwidth + 2, vim.o.columns - 4))
+  local height = math.max(1, math.min(10, #state.entries))
 
   local display_lines = {}
   for _, entry in ipairs(state.entries) do

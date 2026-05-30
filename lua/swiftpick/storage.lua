@@ -77,6 +77,26 @@ function M.add_filename_for_cwd(storage_file_path, cwd)
   write_data(storage_file_path, data)
 end
 
+--- Adds an explicit path to the list for the given cwd.
+--- Does nothing if the path is already present.
+function M.add_path_for_cwd(storage_file_path, cwd, path)
+  if not path or path == "" then
+    return
+  end
+
+  local data = read_data(storage_file_path)
+  data[cwd] = data[cwd] or {}
+
+  for _, existing in ipairs(data[cwd]) do
+    if existing == path then
+      return
+    end
+  end
+
+  table.insert(data[cwd], path)
+  write_data(storage_file_path, data)
+end
+
 --- Removes a specific filename from the list for the given cwd.
 function M.remove_filename_for_cwd(storage_file_path, cwd, filename)
   local data = read_data(storage_file_path)
