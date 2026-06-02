@@ -4,9 +4,14 @@ local helper = require("swiftpick2.picker.helper")
 
 local function get_window_size(buf_size, numberwidth)
   local footer_size = #helper.get_picker_footer()
+  local padding_r = 2
+  local numberwidth_extra_padding = 2
   local win_size = {
-    width = vim.fn.max({ vim.fn.min({ buf_size.width + 2 + numberwidth, vim.o.columns - 4 }), footer_size + 4 }),
-    height = vim.fn.min({ buf_size.height + 2, vim.o.lines - 4 }),
+    width = vim.fn.max({
+      vim.fn.min({ buf_size.width + numberwidth + numberwidth_extra_padding, vim.o.columns - 4 }),
+      footer_size,
+    }) + padding_r,
+    height = vim.fn.min({ buf_size.height + 1, vim.o.lines - 4 }),
   }
   return win_size
 end
