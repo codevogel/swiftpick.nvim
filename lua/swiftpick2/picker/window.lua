@@ -1,8 +1,11 @@
 local M = {}
 
-local function get_window_size(buf_size)
+local helper = require("swiftpick2.picker.helper")
+
+local function get_window_size(buf_size, numberwidth)
+  local footer_size = #helper.get_picker_footer()
   local win_size = {
-    width = vim.fn.min({ buf_size.width + 2, vim.o.columns - 4 }),
+    width = vim.fn.max({ vim.fn.min({ buf_size.width + 2 + numberwidth, vim.o.columns - 4 }), footer_size + 4 }),
     height = vim.fn.min({ buf_size.height + 2, vim.o.lines - 4 }),
   }
   return win_size
@@ -25,8 +28,8 @@ local function get_buf_size(entry_buf_nr)
   }
 end
 
-function M.get_centered_win_config(entry_buf_nr)
-  local win_size = get_window_size(get_buf_size(entry_buf_nr))
+function M.get_centered_win_config(entry_buf_nr, numberwidth)
+  local win_size = get_window_size(get_buf_size(entry_buf_nr), numberwidth)
   local row = math.floor((vim.o.lines - win_size.height) / 2)
   local col = math.floor((vim.o.columns - win_size.width) / 2)
   return {
@@ -39,6 +42,8 @@ function M.get_centered_win_config(entry_buf_nr)
     style = "minimal",
     title = "swiftpick",
     title_pos = "center",
+    footer = helper.get_picker_footer(),
+    footer_pos = "center",
   }
 end
 
