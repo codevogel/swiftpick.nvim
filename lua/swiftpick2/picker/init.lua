@@ -1,5 +1,6 @@
 local M = {}
 
+local config = require("swiftpick2.config")
 local storage = require("swiftpick2.storage")
 local window = require("swiftpick2.picker.window")
 local helper = require("swiftpick2.picker.helper")
@@ -35,9 +36,17 @@ local function create_picker_keybinds()
   end)
 end
 
--- Show H J K L on the first four lines of the picker window in the number gutter before the line numbers.
 local function show_hints()
-  local hints = { "H", "J", "K", "L" }
+  local char_keybinds = config.values.keybinds.open_entry.chars
+  -- select all non-nil values from char_keybinds and couple them with their index in a table
+  local hints = {}
+  for i = 1, 10 do
+    local key = char_keybinds["_" .. i]
+    if key ~= nil then
+      hints[i] = key
+    end
+  end
+
   vim.api.nvim_buf_clear_namespace(state.buf, state.HINT_NS, 0, -1)
   local count = vim.api.nvim_buf_line_count(state.buf)
   for i, label in ipairs(hints) do
