@@ -61,8 +61,7 @@ end
 
 --- Adds the current buffer's filename to the list for the given cwd.
 --- Does nothing if the filename is already present.
-function M.add_filename_for_cwd(cwd)
-  local filename = vim.api.nvim_buf_get_name(0)
+function M.add_filename_for_cwd(cwd, filename)
   if filename == "" then
     return
   end

@@ -69,15 +69,18 @@ local function show_hints(buf)
   end
 end
 
-local function on_exit_picker()
+local function on_exit_picker(on_exit_callback)
   helper.show_cursor()
   vim.api.nvim_buf_delete(state.buf, { force = true })
 
   state.buf = nil
   state.win = nil
+  if on_exit_callback then
+    on_exit_callback()
+  end
 end
 
-function M.create_picker_window(entry_lines)
+function M.create_picker_window(entry_lines, on_exit_callback)
   state.buf = vim.api.nvim_create_buf(false, true)
   helper.hide_cursor()
 
@@ -95,7 +98,7 @@ function M.create_picker_window(entry_lines)
   vim.api.nvim_create_autocmd("WinLeave", {
     once = true,
     callback = function()
-      on_exit_picker()
+      on_exit_picker(on_exit_callback)
     end,
     buf = state.buf,
   })
