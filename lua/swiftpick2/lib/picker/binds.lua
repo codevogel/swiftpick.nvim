@@ -63,11 +63,10 @@ end
 local function create_add_at_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.add_at, function()
     local key_map = pick_entry_key_to_index()
-    local ok, code = pcall(vim.fn.getchar)
-    if not ok then
+    local key = vim.fn.getcharstr()
+    if key == "" then
       return
     end
-    local key = vim.fn.nr2char(code)
     local index = key_map[key]
     if not index then
       return
@@ -81,11 +80,10 @@ end
 local function create_remove_at_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.remove_at, function()
     local key_map = pick_entry_key_to_index()
-    local ok, code = pcall(vim.fn.getchar)
-    if not ok then
+    local key = vim.fn.getcharstr()
+    if key == "" then
       return
     end
-    local key = vim.fn.nr2char(code)
     local index = key_map[key]
     if not index then
       return
