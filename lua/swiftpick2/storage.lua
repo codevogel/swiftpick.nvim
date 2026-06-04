@@ -125,4 +125,41 @@ function M.set_filenames_for_cwd(cwd, filenames)
   write_data(data)
 end
 
+--- Removes the entry at a specific 1-based index from the list for the given cwd.
+--- If no entry exists at that index, does nothing.
+function M.remove_filename_at_for_cwd(cwd, index)
+  local data = read_data()
+  if not data[cwd] or not data[cwd][index] then
+    return
+  end
+  table.remove(data[cwd], index)
+  write_data(data)
+end
+
+--- Adds a filename at a specific 1-based index in the list for the given cwd.
+--- If the slot holds "<empty>", replaces it.
+--- If a real entry exists there, inserts (shifting subsequent entries down).
+--- If the list is shorter than index, pads preceding slots with "<empty>" first.
+function M.add_filename_at_for_cwd(cwd, filename, index)
+  if filename == "" then
+    return
+  end
+  local data = read_data()
+  data[cwd] = data[cwd] or {}
+  local list = data[cwd]
+
+  if #list < index then
+    for i = #list + 1, index - 1 do
+      list[i] = "<empty>"
+    end
+    list[index] = filename
+  elseif list[index] == "<empty>" then
+    list[index] = filename
+  else
+    table.insert(list, index, filename)
+  end
+
+  write_data(data)
+end
+
 return M

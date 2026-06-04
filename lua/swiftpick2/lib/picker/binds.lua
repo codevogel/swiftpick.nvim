@@ -40,6 +40,49 @@ local function create_remove_keybind(buf)
   end)
 end
 
+-- Builds a flat key -> 1-based-index map from config.values.keybinds.pick_entry.
+local function pick_entry_key_to_index()
+  local map = {}
+  for _, group in pairs(config.values.keybinds.pick_entry) do
+    if type(group) == "table" then
+      for name, key in pairs(group) do
+        if key ~= nil then
+          local idx = tonumber(name:match("_(%d+)"))
+          if idx then
+            map[key] = idx
+          end
+        end
+      end
+    end
+  end
+  return map
+end
+
+local function create_add_at_keybind(buf)
+  create_local_buffer_keybind(buf, "n", config.values.keybinds.add_at, function()
+    local key_map = pick_entry_key_to_index()
+    local ok, code = pcall(vim.fn.getchar)
+    if not ok then return end
+    local key = vim.fn.nr2char(code)
+    local index = key_map[key]
+    if not index then return end
+    local filename = vim.api.nvim_buf_get_name(state.opened_from_buffer)
+    storage.add_filename_at_for_cwd(vim.uv.cwd(), filename, index)
+  end)
+end
+
+local function create_remove_at_keybind(buf)
+  create_local_buffer_keybind(buf, "n", config.values.keybinds.remove_at, function()
+    local key_map = pick_entry_key_to_index()
+    local ok, code = pcall(vim.fn.getchar)
+    if not ok then return end
+    local key = vim.fn.nr2char(code)
+    local index = key_map[key]
+    if not index then return end
+    storage.remove_filename_at_for_cwd(vim.uv.cwd(), index)
+  end)
+end
+
 function M.create_picker_keybinds(win, buf)
   if win == nil then
     error("Picker window number is nil. Cannot create keybinds.")
@@ -47,7 +90,9 @@ function M.create_picker_keybinds(win, buf)
 
   create_close_picker_keybinds(win, buf)
   create_add_keybind(buf)
+  create_add_at_keybind(buf)
   create_remove_keybind(buf)
+  create_remove_at_keybind(buf)
 end
 
 return M
