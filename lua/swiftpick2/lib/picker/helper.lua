@@ -35,4 +35,21 @@ function M.get_picker_footer()
   return footer
 end
 
+function M.get_buf_size(entry_buf_nr)
+  local line_count = vim.api.nvim_buf_line_count(entry_buf_nr)
+
+  local max_line_length = 0
+  for i = 1, line_count do
+    local line_length = #vim.api.nvim_buf_get_lines(entry_buf_nr, i - 1, i, false)[1]
+    if line_length > max_line_length then
+      max_line_length = line_length
+    end
+  end
+
+  return {
+    width = max_line_length,
+    height = line_count,
+  }
+end
+
 return M
