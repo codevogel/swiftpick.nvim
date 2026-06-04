@@ -47,7 +47,7 @@ local function get_centered_win_config(entry_buf_nr, numberwidth)
 end
 
 local function show_hints(buf)
-  local char_keybinds = config.values.keybinds.open_entry.chars
+  local char_keybinds = config.values.keybinds.pick_entry.chars
   -- select all non-nil values from char_keybinds and couple them with their index in a table
   local hints = {}
   for i = 1, 10 do
