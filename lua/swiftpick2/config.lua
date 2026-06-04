@@ -10,6 +10,7 @@ M.defaults = {
     add_at = "A",
     remove = "r",
     remove_at = "R",
+    prune_empty = "p",
     edit_entries = "e",
     pick_highlighted_entry = "<CR>",
     pick_entry = {

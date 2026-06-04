@@ -118,6 +118,22 @@ function M.remove_filename_for_cwd(cwd, filename)
   write_data(data)
 end
 
+--- Removes all "<empty>" slots from the list for the given cwd.
+function M.prune_empty_for_cwd(cwd)
+  local data = read_data()
+  if not data[cwd] then
+    return
+  end
+  local pruned = {}
+  for _, entry in ipairs(data[cwd]) do
+    if entry ~= "<empty>" then
+      table.insert(pruned, entry)
+    end
+  end
+  data[cwd] = pruned
+  write_data(data)
+end
+
 --- Replaces the entire list of filenames for the given cwd.
 function M.set_filenames_for_cwd(cwd, filenames)
   local data = read_data()

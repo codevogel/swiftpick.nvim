@@ -83,6 +83,12 @@ local function create_remove_at_keybind(buf)
   end)
 end
 
+local function create_prune_empty_keybind(buf)
+  create_local_buffer_keybind(buf, "n", config.values.keybinds.prune_empty, function()
+    storage.prune_empty_for_cwd(vim.uv.cwd())
+  end)
+end
+
 function M.create_picker_keybinds(win, buf)
   if win == nil then
     error("Picker window number is nil. Cannot create keybinds.")
@@ -93,6 +99,7 @@ function M.create_picker_keybinds(win, buf)
   create_add_at_keybind(buf)
   create_remove_keybind(buf)
   create_remove_at_keybind(buf)
+  create_prune_empty_keybind(buf)
 end
 
 return M
