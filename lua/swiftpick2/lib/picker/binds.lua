@@ -31,12 +31,14 @@ end
 local function create_add_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.add, function()
     storage.add_filename_for_cwd(vim.uv.cwd(), vim.api.nvim_buf_get_name(state.opened_from_buffer))
+    require("swiftpick2.lib.picker.window").refresh_picker_window()
   end)
 end
 
 local function create_remove_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.remove, function()
     storage.remove_filename_for_cwd(vim.uv.cwd(), vim.api.nvim_buf_get_name(state.opened_from_buffer))
+    require("swiftpick2.lib.picker.window").refresh_picker_window()
   end)
 end
 
@@ -62,12 +64,17 @@ local function create_add_at_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.add_at, function()
     local key_map = pick_entry_key_to_index()
     local ok, code = pcall(vim.fn.getchar)
-    if not ok then return end
+    if not ok then
+      return
+    end
     local key = vim.fn.nr2char(code)
     local index = key_map[key]
-    if not index then return end
+    if not index then
+      return
+    end
     local filename = vim.api.nvim_buf_get_name(state.opened_from_buffer)
     storage.add_filename_at_for_cwd(vim.uv.cwd(), filename, index)
+    require("swiftpick2.lib.picker.window").refresh_picker_window()
   end)
 end
 
@@ -75,17 +82,23 @@ local function create_remove_at_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.remove_at, function()
     local key_map = pick_entry_key_to_index()
     local ok, code = pcall(vim.fn.getchar)
-    if not ok then return end
+    if not ok then
+      return
+    end
     local key = vim.fn.nr2char(code)
     local index = key_map[key]
-    if not index then return end
+    if not index then
+      return
+    end
     storage.remove_filename_at_for_cwd(vim.uv.cwd(), index)
+    require("swiftpick2.lib.picker.window").refresh_picker_window()
   end)
 end
 
 local function create_prune_empty_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.prune_empty, function()
     storage.prune_empty_for_cwd(vim.uv.cwd())
+    require("swiftpick2.lib.picker.window").refresh_picker_window()
   end)
 end
 

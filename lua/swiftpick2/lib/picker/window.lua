@@ -3,8 +3,10 @@ local M = {}
 local config = require("swiftpick2.config")
 local helper = require("swiftpick2.lib.picker.helper")
 local binds = require("swiftpick2.lib.picker.binds")
+local storage = require("swiftpick2.storage")
 
 local HINT_NAMESPACE = vim.api.nvim_create_namespace("swiftpick_hints")
+local NUMBERWIDTH = 2
 
 local state = {
   buf = nil,
@@ -13,13 +15,13 @@ local state = {
   HINT_NS = vim.api.nvim_create_namespace("swiftpick_hints"),
 }
 
-local function get_window_size(buf_size, numberwidth)
+local function get_window_size(buf_size)
   local footer_size = #helper.get_picker_footer()
   local padding_r = 2
   local numberwidth_extra_padding = 2
   local win_size = {
     width = vim.fn.max({
-      vim.fn.min({ buf_size.width + numberwidth + numberwidth_extra_padding, vim.o.columns - 4 }),
+      vim.fn.min({ buf_size.width + NUMBERWIDTH + numberwidth_extra_padding, vim.o.columns - 4 }),
       footer_size,
     }) + padding_r,
     height = vim.fn.min({ buf_size.height + 1, vim.o.lines - 4 }),
@@ -27,8 +29,8 @@ local function get_window_size(buf_size, numberwidth)
   return win_size
 end
 
-local function get_centered_win_config(entry_buf_nr, numberwidth)
-  local win_size = get_window_size(helper.get_buf_size(entry_buf_nr), numberwidth)
+local function get_centered_win_config(entry_buf_nr)
+  local win_size = get_window_size(helper.get_buf_size(entry_buf_nr))
   local row = math.floor((vim.o.lines - win_size.height) / 2)
   local col = math.floor((vim.o.columns - win_size.width) / 2)
   return {
@@ -80,18 +82,16 @@ local function on_exit_picker(on_exit_callback)
   end
 end
 
-function M.create_picker_window(entry_lines, on_exit_callback)
+function M.create_picker_window(on_exit_callback)
   state.buf = vim.api.nvim_create_buf(false, true)
   helper.hide_cursor()
 
-  local numberwidth = 2
-
-  vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, entry_lines)
-  state.win = vim.api.nvim_open_win(state.buf, true, get_centered_win_config(state.buf, numberwidth))
+  vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+  state.win = vim.api.nvim_open_win(state.buf, true, get_centered_win_config(state.buf))
 
   vim.wo[state.win].number = true
   vim.wo[state.win].cursorline = false
-  vim.wo[state.win].numberwidth = numberwidth
+  vim.wo[state.win].numberwidth = NUMBERWIDTH
 
   show_hints(state.buf)
 
@@ -103,6 +103,14 @@ function M.create_picker_window(entry_lines, on_exit_callback)
     buf = state.buf,
   })
   binds.create_picker_keybinds(state.win, state.buf)
+end
+
+function M.refresh_picker_window()
+  if state.buf and vim.api.nvim_buf_is_valid(state.buf) then
+    vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+    vim.api.nvim_win_set_config(state.win, get_centered_win_config(state.buf))
+    show_hints(state.buf)
+  end
 end
 
 return M
