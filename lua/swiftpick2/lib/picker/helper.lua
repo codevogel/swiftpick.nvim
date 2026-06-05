@@ -35,7 +35,7 @@ local function get_prune_segment()
   end
 
   if has_empty then
-    return " • [" .. vim.api.nvim_replace_termcodes(kb.prune_empty, true, true, true) .. "] prune"
+    return " • [" .. kb.prune_empty .. "] prune"
   else
     return ""
   end
@@ -44,14 +44,18 @@ end
 function M.get_picker_footer()
   local kb = config.values.keybinds
 
+  if require("swiftpick2.state").edit_mode then
+    return string.format("  [%s] pick entry • [:w] save changes • [q] exit  ", kb.pick_highlighted_entry)
+  end
+
   local footer = string.format(
     "  [%s|%s] add • [%s|%s] remove%s • [%s] edit  ",
-    vim.api.nvim_replace_termcodes(kb.add, true, true, true),
-    vim.api.nvim_replace_termcodes(kb.add_at, true, true, true),
-    vim.api.nvim_replace_termcodes(kb.remove, true, true, true),
-    vim.api.nvim_replace_termcodes(kb.remove_at, true, true, true),
+    kb.add,
+    kb.add_at,
+    kb.remove,
+    kb.remove_at,
     get_prune_segment(),
-    vim.api.nvim_replace_termcodes(kb.edit_entries, true, true, true)
+    kb.edit_entries
   )
   return footer
 end

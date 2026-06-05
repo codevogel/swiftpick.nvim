@@ -6,6 +6,7 @@ M.defaults = {
   keybinds = {
     open_picker = "<leader>h",
     close_picker = { "<Esc>", "q", "<C-c>" },
+    exit_edit_mode = { "<Esc>", "q", "<C-c>" },
     add = "a",
     add_at = "A",
     remove = "r",

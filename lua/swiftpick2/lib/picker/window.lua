@@ -8,12 +8,15 @@ local storage = require("swiftpick2.storage")
 local HINT_NAMESPACE = vim.api.nvim_create_namespace("swiftpick_hints")
 local NUMBERWIDTH = 2
 
-local state = {
+local window_state = {
   entry_list_buf = nil,
+  edit_mode_buf = nil,
   picker_win = nil,
   old_statuscolumn = nil,
   HINT_NS = vim.api.nvim_create_namespace("swiftpick_hints"),
 }
+
+local plugin_state = require("swiftpick2.state")
 
 local function get_window_size(buf_size)
   local footer_size = #helper.get_picker_footer()
@@ -24,7 +27,7 @@ local function get_window_size(buf_size)
       vim.fn.min({ buf_size.width + NUMBERWIDTH + numberwidth_extra_padding, vim.o.columns - 4 }),
       footer_size,
     }) + padding_r,
-    height = vim.fn.min({ buf_size.height + 1, vim.o.lines - 4 }),
+    height = vim.fn.min({ vim.fn.max({ buf_size.height + 1, 5 }), vim.o.lines - 4 }),
   }
   return win_size
 end
@@ -73,43 +76,93 @@ end
 
 local function on_exit_picker(on_exit_callback)
   helper.show_cursor()
-  vim.api.nvim_buf_delete(state.entry_list_buf, { force = true })
+  vim.api.nvim_buf_delete(window_state.entry_list_buf, { force = true })
+  vim.api.nvim_buf_delete(window_state.edit_mode_buf, { force = true })
 
-  state.entry_list_buf = nil
-  state.picker_win = nil
+  window_state.entry_list_buf = nil
+  window_state.picker_win = nil
   if on_exit_callback then
     on_exit_callback()
   end
 end
 
 function M.create_picker_window(on_exit_callback)
-  state.entry_list_buf = vim.api.nvim_create_buf(false, true)
+  window_state.entry_list_buf = vim.api.nvim_create_buf(false, true)
+  window_state.picker_win =
+    vim.api.nvim_open_win(window_state.entry_list_buf, true, get_centered_win_config(window_state.entry_list_buf))
+  window_state.edit_mode_buf = vim.api.nvim_create_buf(false, false)
+  vim.api.nvim_buf_set_name(window_state.edit_mode_buf, "swiftpick://edit")
+  vim.bo[window_state.edit_mode_buf].buftype = "acwrite"
+
+  -- WinLeave fires for whichever buffer is current in the picker window,
+  -- so register the autocmd on both buffers.
+  local function make_win_leave_autocmd(buf)
+    vim.api.nvim_create_autocmd("WinLeave", {
+      once = true,
+      callback = function()
+        on_exit_picker(on_exit_callback)
+      end,
+      buf = buf,
+    })
+  end
+  make_win_leave_autocmd(window_state.entry_list_buf)
+  make_win_leave_autocmd(window_state.edit_mode_buf)
+  binds.create_picker_keybinds(window_state.picker_win, window_state.entry_list_buf)
+  binds.create_edit_mode_keybinds(window_state.picker_win, window_state.edit_mode_buf)
+
+  M.switch_to_entry_list()
+end
+
+function M.switch_to_entry_list()
+  plugin_state.edit_mode = false
+
+  vim.api.nvim_buf_set_lines(window_state.entry_list_buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+  vim.api.nvim_win_set_buf(window_state.picker_win, window_state.entry_list_buf)
   helper.hide_cursor()
 
-  vim.api.nvim_buf_set_lines(state.entry_list_buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
-  state.picker_win = vim.api.nvim_open_win(state.entry_list_buf, true, get_centered_win_config(state.entry_list_buf))
+  vim.wo[window_state.picker_win].number = true
+  vim.wo[window_state.picker_win].cursorline = false
+  vim.wo[window_state.picker_win].numberwidth = NUMBERWIDTH
 
-  vim.wo[state.picker_win].number = true
-  vim.wo[state.picker_win].cursorline = false
-  vim.wo[state.picker_win].numberwidth = NUMBERWIDTH
+  M.refresh_picker_window()
+end
 
-  show_hints(state.entry_list_buf)
+function M.switch_to_edit_mode()
+  plugin_state.edit_mode = true
 
-  vim.api.nvim_create_autocmd("WinLeave", {
-    once = true,
+  vim.api.nvim_buf_set_lines(window_state.edit_mode_buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+  vim.bo[window_state.edit_mode_buf].modified = false
+  vim.api.nvim_win_set_buf(window_state.picker_win, window_state.edit_mode_buf)
+
+  vim.wo[window_state.picker_win].number = true
+  vim.wo[window_state.picker_win].cursorline = true
+  vim.wo[window_state.picker_win].numberwidth = NUMBERWIDTH
+
+  helper.show_cursor()
+
+  vim.api.nvim_create_autocmd("BufWriteCmd", {
+    once = false,
     callback = function()
-      on_exit_picker(on_exit_callback)
+      local lines = vim.api.nvim_buf_get_lines(window_state.edit_mode_buf, 0, -1, false)
+      storage.set_filenames_for_cwd(vim.uv.cwd(), lines)
+      vim.bo[window_state.edit_mode_buf].modified = false
+      M.refresh_picker_window()
     end,
-    buf = state.entry_list_buf,
+    buf = window_state.edit_mode_buf,
   })
-  binds.create_picker_keybinds(state.picker_win, state.entry_list_buf)
+
+  M.refresh_picker_window()
 end
 
 function M.refresh_picker_window()
-  if state.entry_list_buf and vim.api.nvim_buf_is_valid(state.entry_list_buf) then
-    vim.api.nvim_buf_set_lines(state.entry_list_buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
-    vim.api.nvim_win_set_config(state.picker_win, get_centered_win_config(state.entry_list_buf))
-    show_hints(state.entry_list_buf)
+  local buf = require("swiftpick2.state").edit_mode and window_state.edit_mode_buf or window_state.entry_list_buf
+  if buf and vim.api.nvim_buf_is_valid(buf) then
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+    if buf == window_state.edit_mode_buf then
+      vim.bo[buf].modified = false
+    end
+    vim.api.nvim_win_set_config(window_state.picker_win, get_centered_win_config(buf))
+    show_hints(buf)
   end
 end
 

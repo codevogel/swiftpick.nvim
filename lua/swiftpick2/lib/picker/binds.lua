@@ -100,6 +100,32 @@ local function create_prune_empty_keybind(buf)
   end)
 end
 
+local function create_edit_mode_keybind(buf)
+  create_local_buffer_keybind(buf, "n", config.values.keybinds.edit_entries, function()
+    require("swiftpick2.lib.picker.window").switch_to_edit_mode()
+  end)
+end
+
+local function create_exit_edit_mode_keybinds(win, buf)
+  if win == nil then
+    error("Picker window number is nil. Cannot create keybinds.")
+  end
+
+  -- if values.keybinds.close_picker is a table, create keybinds for each key in the table
+  -- otherwise, create a single keybind for the close_picker key
+  if type(config.values.keybinds.close_picker) == "table" then
+    for _, key in ipairs(config.values.keybinds.close_picker) do
+      create_local_buffer_keybind(buf, "n", key, function()
+        require("swiftpick2.lib.picker.window").switch_to_entry_list()
+      end)
+    end
+  else
+    create_local_buffer_keybind(buf, "n", config.values.keybinds.close_picker, function()
+      require("swiftpick2.lib.picker.window").switch_to_entry_list()
+    end)
+  end
+end
+
 function M.create_picker_keybinds(win, buf)
   if win == nil then
     error("Picker window number is nil. Cannot create keybinds.")
@@ -111,6 +137,11 @@ function M.create_picker_keybinds(win, buf)
   create_remove_keybind(buf)
   create_remove_at_keybind(buf)
   create_prune_empty_keybind(buf)
+  create_edit_mode_keybind(buf)
+end
+
+function M.create_edit_mode_keybinds(win, buf)
+  create_exit_edit_mode_keybinds(win, buf)
 end
 
 return M
