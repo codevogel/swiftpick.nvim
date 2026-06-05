@@ -106,6 +106,35 @@ local function create_edit_mode_keybind(buf)
   end)
 end
 
+local function pick_file(win, filepath)
+  if not filepath or filepath == "" or filepath == "<empty>" then
+    return
+  end
+  vim.api.nvim_win_close(win, true)
+  if state.opened_from_window and vim.api.nvim_win_is_valid(state.opened_from_window) then
+    vim.api.nvim_set_current_win(state.opened_from_window)
+  end
+  vim.cmd("edit " .. vim.fn.fnameescape(filepath))
+end
+
+local function create_pick_entry_keybinds(win, buf)
+  local key_map = pick_entry_key_to_index()
+  for key, index in pairs(key_map) do
+    create_local_buffer_keybind(buf, "n", key, function()
+      local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+      pick_file(win, lines[index])
+    end)
+  end
+end
+
+local function create_pick_highlighted_entry_keybind(win, buf)
+  create_local_buffer_keybind(buf, "n", config.values.keybinds.pick_highlighted_entry, function()
+    local row = vim.api.nvim_win_get_cursor(win)[1]
+    local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    pick_file(win, lines[row])
+  end)
+end
+
 local function create_exit_edit_mode_keybinds(win, buf)
   if win == nil then
     error("Picker window number is nil. Cannot create keybinds.")
@@ -138,10 +167,12 @@ function M.create_picker_keybinds(win, buf)
   create_remove_at_keybind(buf)
   create_prune_empty_keybind(buf)
   create_edit_mode_keybind(buf)
+  create_pick_entry_keybinds(win, buf)
 end
 
 function M.create_edit_mode_keybinds(win, buf)
   create_exit_edit_mode_keybinds(win, buf)
+  create_pick_highlighted_entry_keybind(win, buf)
 end
 
 return M
