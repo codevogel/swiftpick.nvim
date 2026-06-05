@@ -3,6 +3,7 @@ local M = {}
 local config = require("swiftpick2.config")
 local storage = require("swiftpick2.storage")
 local state = require("swiftpick2.state")
+local paths = require("swiftpick2.lib.picker.paths")
 
 local function create_local_buffer_keybind(buf, mode, key, callback)
   vim.keymap.set(mode, key, callback, { buffer = buf, noremap = true, silent = true })
@@ -100,6 +101,12 @@ local function create_prune_empty_keybind(buf)
   end)
 end
 
+local function create_toggle_absolute_keybind(buf)
+  create_local_buffer_keybind(buf, "n", config.values.keybinds.toggle_absolute, function()
+    require("swiftpick2.lib.picker.window").toggle_absolute()
+  end)
+end
+
 local function create_edit_mode_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.edit_entries, function()
     require("swiftpick2.lib.picker.window").switch_to_edit_mode()
@@ -110,11 +117,12 @@ local function pick_file(win, filepath)
   if not filepath or filepath == "" or filepath == "<empty>" then
     return
   end
+  local abs = paths.to_absolute(filepath, vim.uv.cwd())
   vim.api.nvim_win_close(win, true)
   if state.opened_from_window and vim.api.nvim_win_is_valid(state.opened_from_window) then
     vim.api.nvim_set_current_win(state.opened_from_window)
   end
-  vim.cmd("edit " .. vim.fn.fnameescape(filepath))
+  vim.cmd("edit " .. vim.fn.fnameescape(abs))
 end
 
 local function create_pick_entry_keybinds(win, buf)
@@ -168,6 +176,7 @@ function M.create_picker_keybinds(win, buf)
   create_prune_empty_keybind(buf)
   create_edit_mode_keybind(buf)
   create_pick_entry_keybinds(win, buf)
+  create_toggle_absolute_keybind(buf)
 end
 
 function M.create_edit_mode_keybinds(win, buf)

@@ -13,6 +13,7 @@ M.defaults = {
     remove_at = "R",
     prune_empty = "p",
     edit_entries = "e",
+    toggle_absolute = "t",
     pick_highlighted_entry = "<CR>",
     pick_entry = {
       digits = {

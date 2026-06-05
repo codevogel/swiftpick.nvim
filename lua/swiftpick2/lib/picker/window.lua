@@ -4,6 +4,7 @@ local config = require("swiftpick2.config")
 local helper = require("swiftpick2.lib.picker.helper")
 local binds = require("swiftpick2.lib.picker.binds")
 local storage = require("swiftpick2.storage")
+local paths = require("swiftpick2.lib.picker.paths")
 
 local HINT_NAMESPACE = vim.api.nvim_create_namespace("swiftpick_hints")
 local NUMBERWIDTH = 2
@@ -14,8 +15,21 @@ local window_state = {
   edit_line_count = 0,
   picker_win = nil,
   old_statuscolumn = nil,
+  show_absolute = false,
   HINT_NS = vim.api.nvim_create_namespace("swiftpick_hints"),
 }
+
+local function get_display_entries(cwd)
+  local entries = storage.get_filenames_for_cwd(cwd)
+  if window_state.show_absolute then
+    return entries
+  end
+  local result = {}
+  for _, entry in ipairs(entries) do
+    table.insert(result, paths.to_relative(entry, cwd))
+  end
+  return result
+end
 
 local plugin_state = require("swiftpick2.state")
 
@@ -118,7 +132,7 @@ function M.switch_to_entry_list()
   plugin_state.edit_mode = false
   vim.cmd("stopinsert")
 
-  vim.api.nvim_buf_set_lines(window_state.entry_list_buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+  vim.api.nvim_buf_set_lines(window_state.entry_list_buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
   vim.api.nvim_win_set_buf(window_state.picker_win, window_state.entry_list_buf)
   helper.hide_cursor()
 
@@ -132,7 +146,7 @@ end
 function M.switch_to_edit_mode()
   plugin_state.edit_mode = true
 
-  vim.api.nvim_buf_set_lines(window_state.edit_mode_buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+  vim.api.nvim_buf_set_lines(window_state.edit_mode_buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
   vim.bo[window_state.edit_mode_buf].modified = false
   vim.api.nvim_win_set_buf(window_state.picker_win, window_state.edit_mode_buf)
 
@@ -146,21 +160,23 @@ function M.switch_to_edit_mode()
     once = false,
     callback = function()
       local lines = vim.api.nvim_buf_get_lines(window_state.edit_mode_buf, 0, -1, false)
+      local cwd = vim.uv.cwd()
       local seen = {}
       local valid_lines = {}
       for _, line in ipairs(lines) do
-        if line == "<empty>" then
-          table.insert(valid_lines, line)
-        elseif vim.fn.filereadable(line) == 1 and not seen[line] then
-          seen[line] = true
-          table.insert(valid_lines, line)
+        local abs = paths.to_absolute(line, cwd)
+        if abs == "<empty>" then
+          table.insert(valid_lines, abs)
+        elseif vim.fn.filereadable(abs) == 1 and not seen[abs] then
+          seen[abs] = true
+          table.insert(valid_lines, abs)
         end
       end
       -- Remove trailing <empty> entries
       while #valid_lines > 0 and valid_lines[#valid_lines] == "<empty>" do
         table.remove(valid_lines)
       end
-      storage.set_filenames_for_cwd(vim.uv.cwd(), valid_lines)
+      storage.set_filenames_for_cwd(cwd, valid_lines)
       vim.bo[window_state.edit_mode_buf].modified = false
       vim.schedule(function()
         M.switch_to_entry_list()
@@ -185,10 +201,15 @@ function M.switch_to_edit_mode()
   M.refresh_picker_window()
 end
 
+function M.toggle_absolute()
+  window_state.show_absolute = not window_state.show_absolute
+  M.refresh_picker_window()
+end
+
 function M.refresh_picker_window()
   local buf = require("swiftpick2.state").edit_mode and window_state.edit_mode_buf or window_state.entry_list_buf
   if buf and vim.api.nvim_buf_is_valid(buf) then
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
     if buf == window_state.edit_mode_buf then
       vim.bo[buf].modified = false
     end

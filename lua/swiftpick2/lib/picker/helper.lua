@@ -61,13 +61,14 @@ function M.get_picker_footer()
   end
 
   local footer = string.format(
-    "  [%s|%s] add • [%s|%s] remove%s • [%s] edit • [%s] exit  ",
+    "  [%s|%s/%s|%s] add/remove%s • [%s] edit • [%s] abs/rel • [%s] exit  ",
     kb.add,
     kb.add_at,
     kb.remove,
     kb.remove_at,
     get_prune_segment(),
     kb.edit_entries,
+    kb.toggle_absolute,
     get_first_keybind_if_table(kb.close_picker)
   )
   return footer
