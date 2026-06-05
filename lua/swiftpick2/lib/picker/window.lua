@@ -115,6 +115,7 @@ end
 
 function M.switch_to_entry_list()
   plugin_state.edit_mode = false
+  vim.cmd("stopinsert")
 
   vim.api.nvim_buf_set_lines(window_state.entry_list_buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
   vim.api.nvim_win_set_buf(window_state.picker_win, window_state.entry_list_buf)
@@ -144,9 +145,25 @@ function M.switch_to_edit_mode()
     once = false,
     callback = function()
       local lines = vim.api.nvim_buf_get_lines(window_state.edit_mode_buf, 0, -1, false)
-      storage.set_filenames_for_cwd(vim.uv.cwd(), lines)
+      local seen = {}
+      local valid_lines = {}
+      for _, line in ipairs(lines) do
+        if line == "<empty>" then
+          table.insert(valid_lines, line)
+        elseif vim.fn.filereadable(line) == 1 and not seen[line] then
+          seen[line] = true
+          table.insert(valid_lines, line)
+        end
+      end
+      -- Remove trailing <empty> entries
+      while #valid_lines > 0 and valid_lines[#valid_lines] == "<empty>" do
+        table.remove(valid_lines)
+      end
+      storage.set_filenames_for_cwd(vim.uv.cwd(), valid_lines)
       vim.bo[window_state.edit_mode_buf].modified = false
-      M.refresh_picker_window()
+      vim.schedule(function()
+        M.switch_to_entry_list()
+      end)
     end,
     buf = window_state.edit_mode_buf,
   })
