@@ -41,21 +41,34 @@ local function get_prune_segment()
   end
 end
 
+local function get_first_keybind_if_table(keybind)
+  if type(keybind) == "table" then
+    return keybind[1] or ""
+  else
+    return keybind or ""
+  end
+end
+
 function M.get_picker_footer()
   local kb = config.values.keybinds
 
   if require("swiftpick2.state").edit_mode then
-    return string.format("  [%s] pick entry • [:w] save changes • [q] exit  ", kb.pick_highlighted_entry)
+    return string.format(
+      "  [%s] pick entry • [:w] save changes • [%s] exit  ",
+      kb.pick_highlighted_entry,
+      get_first_keybind_if_table(kb.exit_edit_mode)
+    )
   end
 
   local footer = string.format(
-    "  [%s|%s] add • [%s|%s] remove%s • [%s] edit  ",
+    "  [%s|%s] add • [%s|%s] remove%s • [%s] edit • [%s] exit  ",
     kb.add,
     kb.add_at,
     kb.remove,
     kb.remove_at,
     get_prune_segment(),
-    kb.edit_entries
+    kb.edit_entries,
+    get_first_keybind_if_table(kb.close_picker)
   )
   return footer
 end
