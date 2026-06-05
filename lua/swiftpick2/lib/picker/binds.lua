@@ -4,6 +4,7 @@ local config = require("swiftpick2.config")
 local storage = require("swiftpick2.storage")
 local state = require("swiftpick2.state")
 local paths = require("swiftpick2.lib.picker.paths")
+local function EMPTY() return config.values.empty_entry_identifier end
 
 local function create_local_buffer_keybind(buf, mode, key, callback)
   vim.keymap.set(mode, key, callback, { buffer = buf, noremap = true, silent = true })
@@ -114,7 +115,7 @@ local function create_edit_mode_keybind(buf)
 end
 
 local function pick_file(win, filepath)
-  if not filepath or filepath == "" or filepath == "<empty>" then
+  if not filepath or filepath == "" or filepath == EMPTY() then
     return
   end
   local abs = paths.to_absolute(filepath, vim.uv.cwd())

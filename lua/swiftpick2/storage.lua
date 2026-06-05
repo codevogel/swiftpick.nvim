@@ -1,6 +1,9 @@
 local M = {}
 
 local config = require("swiftpick2.config")
+local function EMPTY()
+  return config.values.empty_entry_identifier
+end
 
 -- Reads and parses the JSON file, returns a Lua table (or {} on failure)
 local function read_data()
@@ -118,7 +121,7 @@ function M.remove_filename_for_cwd(cwd, filename)
   write_data(data)
 end
 
---- Removes all "<empty>" slots from the list for the given cwd.
+--- Removes all EMPTY_ENTRY_IDENTIFIER slots from the list for the given cwd.
 function M.prune_empty_for_cwd(cwd)
   local data = read_data()
   if not data[cwd] then
@@ -126,7 +129,7 @@ function M.prune_empty_for_cwd(cwd)
   end
   local pruned = {}
   for _, entry in ipairs(data[cwd]) do
-    if entry ~= "<empty>" then
+    if entry ~= EMPTY() then
       table.insert(pruned, entry)
     end
   end
@@ -153,9 +156,9 @@ function M.remove_filename_at_for_cwd(cwd, index)
 end
 
 --- Adds a filename at a specific 1-based index in the list for the given cwd.
---- If the slot holds "<empty>", replaces it.
+--- If the slot holds EMPTY_ENTRY_IDENTIFIER, replaces it.
 --- If a real entry exists there, inserts (shifting subsequent entries down).
---- If the list is shorter than index, pads preceding slots with "<empty>" first.
+--- If the list is shorter than index, pads preceding slots with EMPTY_ENTRY_IDENTIFIER first.
 function M.add_filename_at_for_cwd(cwd, filename, index)
   if filename == "" then
     return
@@ -166,10 +169,10 @@ function M.add_filename_at_for_cwd(cwd, filename, index)
 
   if #list < index then
     for i = #list + 1, index - 1 do
-      list[i] = "<empty>"
+      list[i] = EMPTY()
     end
     list[index] = filename
-  elseif list[index] == "<empty>" then
+  elseif list[index] == EMPTY() then
     list[index] = filename
   else
     table.insert(list, index, filename)

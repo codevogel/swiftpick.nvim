@@ -3,6 +3,7 @@ local M = {}
 M.defaults = {
   filename = "swiftpick.json",
   storage_path = vim.fn.stdpath("data") .. "/swiftpick/",
+  show_relative_path_by_default = true,
   show_hints = {
     add = true,
     add_at = true,
@@ -54,6 +55,7 @@ M.defaults = {
       },
     },
   },
+  empty_entry_identifier = "<empty>",
 }
 
 M.values = {}

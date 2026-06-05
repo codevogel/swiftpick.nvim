@@ -1,6 +1,7 @@
 local M = {}
 
-local EMPTY = "<empty>"
+local config = require("swiftpick2.config")
+local function EMPTY() return config.values.empty_entry_identifier end
 
 local function split_path(path)
   local parts = {}
@@ -11,9 +12,12 @@ local function split_path(path)
 end
 
 --- Convert an absolute path to a path relative to cwd, using ../ notation.
---- Returns the path unchanged if it is the "<empty>" sentinel.
+--- Returns the path unchanged if it is the EMPTY_ENTRY_IDENTIFIER sentinel.
 function M.to_relative(abs_path, cwd)
-  if abs_path == EMPTY then
+  if type(abs_path) ~= "string" then
+    return EMPTY()
+  end
+  if abs_path == EMPTY() then
     return abs_path
   end
 
@@ -48,10 +52,13 @@ function M.to_relative(abs_path, cwd)
 end
 
 --- Convert a relative path to an absolute path resolved against cwd.
---- Returns the path unchanged if it is the "<empty>" sentinel.
+--- Returns the path unchanged if it is the EMPTY_ENTRY_IDENTIFIER sentinel.
 --- Returns the path unchanged if it is already absolute.
 function M.to_absolute(path, cwd)
-  if path == EMPTY then
+  if type(path) ~= "string" then
+    return EMPTY()
+  end
+  if path == EMPTY() then
     return path
   end
   if path:sub(1, 1) == "/" then

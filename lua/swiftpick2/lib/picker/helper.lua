@@ -2,6 +2,7 @@ local M = {}
 
 local config = require("swiftpick2.config")
 local storage = require("swiftpick2.storage")
+local function EMPTY() return config.values.empty_entry_identifier end
 
 -- Store the old guicursor value so we can restore it when the picker is closed.
 local old_guicursor = nil
@@ -28,7 +29,7 @@ local function get_prune_segment()
   local entries = storage.get_filenames_for_cwd(vim.uv.cwd())
   local has_empty = false
   for _, entry in ipairs(entries) do
-    if entry == "<empty>" then
+    if entry == EMPTY() then
       has_empty = true
       break
     end
@@ -69,8 +70,7 @@ function M.get_picker_footer()
   if sh.add or sh.add_at then
     local add_part = sh.add and kb.add or nil
     local add_at_part = sh.add_at and kb.add_at or nil
-    local lhs = (add_part and add_at_part) and (add_part .. "|" .. add_at_part)
-      or (add_part or add_at_part)
+    local lhs = (add_part and add_at_part) and (add_part .. "|" .. add_at_part) or (add_part or add_at_part)
     if lhs then
       table.insert(segments, "[" .. lhs .. "] add")
     end
@@ -87,7 +87,8 @@ function M.get_picker_footer()
   if sh.prune_empty then
     local prune = get_prune_segment()
     if prune ~= "" then
-      table.insert(segments, prune:gsub("^ • ", ""))
+      local prune_text = prune:gsub("^ • ", "")
+      table.insert(segments, prune_text)
     end
   end
   if sh.edit_entries then

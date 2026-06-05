@@ -8,6 +8,9 @@ local paths = require("swiftpick2.lib.picker.paths")
 
 local HINT_NAMESPACE = vim.api.nvim_create_namespace("swiftpick_hints")
 local NUMBERWIDTH = 2
+local function EMPTY()
+  return config.values.empty_entry_identifier
+end
 
 local window_state = {
   entry_list_buf = nil,
@@ -16,6 +19,7 @@ local window_state = {
   picker_win = nil,
   old_statuscolumn = nil,
   show_absolute = false,
+  default_value_for_show_absolute_set = false,
   HINT_NS = vim.api.nvim_create_namespace("swiftpick_hints"),
 }
 
@@ -102,6 +106,10 @@ local function on_exit_picker(on_exit_callback)
 end
 
 function M.create_picker_window(on_exit_callback)
+  if not window_state.default_value_for_show_absolute_set then
+    window_state.show_absolute = not config.values.show_relative_path_by_default
+    window_state.default_value_for_show_absolute_set = true
+  end
   window_state.entry_list_buf = vim.api.nvim_create_buf(false, true)
   window_state.picker_win =
     vim.api.nvim_open_win(window_state.entry_list_buf, true, get_centered_win_config(window_state.entry_list_buf))
@@ -165,7 +173,7 @@ function M.switch_to_edit_mode()
       local valid_lines = {}
       for _, line in ipairs(lines) do
         local abs = paths.to_absolute(line, cwd)
-        if abs == "<empty>" then
+        if abs == EMPTY() then
           table.insert(valid_lines, abs)
         elseif vim.fn.filereadable(abs) == 1 and not seen[abs] then
           seen[abs] = true
@@ -173,7 +181,7 @@ function M.switch_to_edit_mode()
         end
       end
       -- Remove trailing <empty> entries
-      while #valid_lines > 0 and valid_lines[#valid_lines] == "<empty>" do
+      while #valid_lines > 0 and valid_lines[#valid_lines] == EMPTY() do
         table.remove(valid_lines)
       end
       storage.set_filenames_for_cwd(cwd, valid_lines)
