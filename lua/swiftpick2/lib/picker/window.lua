@@ -9,8 +9,8 @@ local HINT_NAMESPACE = vim.api.nvim_create_namespace("swiftpick_hints")
 local NUMBERWIDTH = 2
 
 local state = {
-  buf = nil,
-  win = nil,
+  entry_list_buf = nil,
+  picker_win = nil,
   old_statuscolumn = nil,
   HINT_NS = vim.api.nvim_create_namespace("swiftpick_hints"),
 }
@@ -73,43 +73,43 @@ end
 
 local function on_exit_picker(on_exit_callback)
   helper.show_cursor()
-  vim.api.nvim_buf_delete(state.buf, { force = true })
+  vim.api.nvim_buf_delete(state.entry_list_buf, { force = true })
 
-  state.buf = nil
-  state.win = nil
+  state.entry_list_buf = nil
+  state.picker_win = nil
   if on_exit_callback then
     on_exit_callback()
   end
 end
 
 function M.create_picker_window(on_exit_callback)
-  state.buf = vim.api.nvim_create_buf(false, true)
+  state.entry_list_buf = vim.api.nvim_create_buf(false, true)
   helper.hide_cursor()
 
-  vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
-  state.win = vim.api.nvim_open_win(state.buf, true, get_centered_win_config(state.buf))
+  vim.api.nvim_buf_set_lines(state.entry_list_buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+  state.picker_win = vim.api.nvim_open_win(state.entry_list_buf, true, get_centered_win_config(state.entry_list_buf))
 
-  vim.wo[state.win].number = true
-  vim.wo[state.win].cursorline = false
-  vim.wo[state.win].numberwidth = NUMBERWIDTH
+  vim.wo[state.picker_win].number = true
+  vim.wo[state.picker_win].cursorline = false
+  vim.wo[state.picker_win].numberwidth = NUMBERWIDTH
 
-  show_hints(state.buf)
+  show_hints(state.entry_list_buf)
 
   vim.api.nvim_create_autocmd("WinLeave", {
     once = true,
     callback = function()
       on_exit_picker(on_exit_callback)
     end,
-    buf = state.buf,
+    buf = state.entry_list_buf,
   })
-  binds.create_picker_keybinds(state.win, state.buf)
+  binds.create_picker_keybinds(state.picker_win, state.entry_list_buf)
 end
 
 function M.refresh_picker_window()
-  if state.buf and vim.api.nvim_buf_is_valid(state.buf) then
-    vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
-    vim.api.nvim_win_set_config(state.win, get_centered_win_config(state.buf))
-    show_hints(state.buf)
+  if state.entry_list_buf and vim.api.nvim_buf_is_valid(state.entry_list_buf) then
+    vim.api.nvim_buf_set_lines(state.entry_list_buf, 0, -1, false, storage.get_filenames_for_cwd(vim.uv.cwd()))
+    vim.api.nvim_win_set_config(state.picker_win, get_centered_win_config(state.entry_list_buf))
+    show_hints(state.entry_list_buf)
   end
 end
 
