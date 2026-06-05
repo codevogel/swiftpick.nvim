@@ -11,6 +11,7 @@ local NUMBERWIDTH = 2
 local window_state = {
   entry_list_buf = nil,
   edit_mode_buf = nil,
+  edit_line_count = 0,
   picker_win = nil,
   old_statuscolumn = nil,
   HINT_NS = vim.api.nvim_create_namespace("swiftpick_hints"),
@@ -164,6 +165,19 @@ function M.switch_to_edit_mode()
       vim.schedule(function()
         M.switch_to_entry_list()
       end)
+    end,
+    buf = window_state.edit_mode_buf,
+  })
+
+  window_state.edit_line_count = vim.api.nvim_buf_line_count(window_state.edit_mode_buf)
+  vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
+    once = false,
+    callback = function()
+      local current_count = vim.api.nvim_buf_line_count(window_state.edit_mode_buf)
+      if current_count ~= window_state.edit_line_count then
+        window_state.edit_line_count = current_count
+        show_hints(window_state.edit_mode_buf)
+      end
     end,
     buf = window_state.edit_mode_buf,
   })
