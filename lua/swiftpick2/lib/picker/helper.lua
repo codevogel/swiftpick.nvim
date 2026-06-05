@@ -51,27 +51,55 @@ end
 
 function M.get_picker_footer()
   local kb = config.values.keybinds
+  local sh = config.values.show_hints
 
   if require("swiftpick2.state").edit_mode then
-    return string.format(
-      "  [%s] pick entry • [:w] save changes • [%s] exit  ",
-      kb.pick_highlighted_entry,
-      get_first_keybind_if_table(kb.exit_edit_mode)
-    )
+    local segments = {}
+    if sh.pick_highlighted_entry then
+      table.insert(segments, "[" .. kb.pick_highlighted_entry .. "] pick entry")
+    end
+    table.insert(segments, "[:w] save changes")
+    if sh.exit_edit_mode then
+      table.insert(segments, "[" .. get_first_keybind_if_table(kb.exit_edit_mode) .. "] exit")
+    end
+    return "  " .. table.concat(segments, " • ") .. "  "
   end
 
-  local footer = string.format(
-    "  [%s|%s/%s|%s] add/remove%s • [%s] edit • [%s] abs/rel • [%s] exit  ",
-    kb.add,
-    kb.add_at,
-    kb.remove,
-    kb.remove_at,
-    get_prune_segment(),
-    kb.edit_entries,
-    kb.toggle_absolute,
-    get_first_keybind_if_table(kb.close_picker)
-  )
-  return footer
+  local segments = {}
+  if sh.add or sh.add_at then
+    local add_part = sh.add and kb.add or nil
+    local add_at_part = sh.add_at and kb.add_at or nil
+    local lhs = (add_part and add_at_part) and (add_part .. "|" .. add_at_part)
+      or (add_part or add_at_part)
+    if lhs then
+      table.insert(segments, "[" .. lhs .. "] add")
+    end
+  end
+  if sh.remove or sh.remove_at then
+    local remove_part = sh.remove and kb.remove or nil
+    local remove_at_part = sh.remove_at and kb.remove_at or nil
+    local rhs = (remove_part and remove_at_part) and (remove_part .. "|" .. remove_at_part)
+      or (remove_part or remove_at_part)
+    if rhs then
+      table.insert(segments, "[" .. rhs .. "] remove")
+    end
+  end
+  if sh.prune_empty then
+    local prune = get_prune_segment()
+    if prune ~= "" then
+      table.insert(segments, prune:gsub("^ • ", ""))
+    end
+  end
+  if sh.edit_entries then
+    table.insert(segments, "[" .. kb.edit_entries .. "] edit")
+  end
+  if sh.toggle_absolute then
+    table.insert(segments, "[" .. kb.toggle_absolute .. "] abs/rel")
+  end
+  if sh.close_picker then
+    table.insert(segments, "[" .. get_first_keybind_if_table(kb.close_picker) .. "] exit")
+  end
+  return "  " .. table.concat(segments, " • ") .. "  "
 end
 
 function M.get_buf_size(entry_buf_nr)
