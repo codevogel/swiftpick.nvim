@@ -57,7 +57,7 @@ function M.get_picker_footer()
   local kb = config.values.keybinds
   local sh = config.values.show_hints
 
-  if require("swiftpick.state").edit_mode then
+  if state.edit_mode then
     local segments = {}
     if sh.pick_highlighted_entry then
       table.insert(segments, "[" .. kb.pick_highlighted_entry .. "] pick entry")

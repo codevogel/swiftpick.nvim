@@ -70,7 +70,7 @@ local function get_centered_win_config(entry_buf_nr)
     height = win_size.height,
     border = "rounded",
     style = "minimal",
-    title = "swiftpick",
+    title = plugin_state.global_picker and "swiftpick [global]" or "swiftpick",
     title_pos = "center",
     footer = helper.get_picker_footer(),
     footer_pos = "center",
@@ -231,7 +231,7 @@ function M.toggle_global_picker()
 end
 
 function M.refresh_picker_window()
-  local buf = require("swiftpick.state").edit_mode and window_state.edit_mode_buf or window_state.entry_list_buf
+  local buf = plugin_state.edit_mode and window_state.edit_mode_buf or window_state.entry_list_buf
   if buf and vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
     if buf == window_state.edit_mode_buf then
