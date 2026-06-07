@@ -52,7 +52,7 @@ local function get_first_keybind_if_table(keybind)
   end
 end
 
-function M.get_picker_footer(display_entries)
+function M.get_picker_footer(display_entries, window_state)
   local kb = config.values.keybinds
   local show_hints = config.values.show_hints
 
@@ -98,7 +98,7 @@ function M.get_picker_footer(display_entries)
   end
 
   local toggle_global_part = state.global_picker and "local" or "global"
-  local toggle_absolute_part = require("swiftpick.lib.picker.window").window_state.show_absolute and "rel" or "abs"
+  local toggle_absolute_part = window_state.show_absolute and "rel" or "abs"
 
   if show_hints.toggle_global_picker and show_hints.toggle_absolute then
     table.insert(
