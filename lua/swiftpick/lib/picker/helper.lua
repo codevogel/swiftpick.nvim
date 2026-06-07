@@ -55,52 +55,71 @@ end
 
 function M.get_picker_footer()
   local kb = config.values.keybinds
-  local sh = config.values.show_hints
+  local show_hints = config.values.show_hints
 
   if state.edit_mode then
     local segments = {}
-    if sh.pick_highlighted_entry then
+    if show_hints.pick_highlighted_entry then
       table.insert(segments, "[" .. kb.pick_highlighted_entry .. "] pick entry")
     end
     table.insert(segments, "[:w] save changes")
-    if sh.exit_edit_mode then
+    if show_hints.exit_edit_mode then
       table.insert(segments, "[" .. get_first_keybind_if_table(kb.exit_edit_mode) .. "] exit")
     end
     return "  " .. table.concat(segments, " • ") .. "  "
   end
 
   local segments = {}
-  if sh.add or sh.add_at then
-    local add_part = sh.add and kb.add or nil
-    local add_at_part = sh.add_at and kb.add_at or nil
+  if show_hints.add or show_hints.add_at then
+    local add_part = show_hints.add and kb.add or nil
+    local add_at_part = show_hints.add_at and kb.add_at or nil
     local lhs = (add_part and add_at_part) and (add_part .. "|" .. add_at_part) or (add_part or add_at_part)
     if lhs then
       table.insert(segments, "[" .. lhs .. "] add")
     end
   end
-  if sh.remove or sh.remove_at then
-    local remove_part = sh.remove and kb.remove or nil
-    local remove_at_part = sh.remove_at and kb.remove_at or nil
-    local rhs = (remove_part and remove_at_part) and (remove_part .. "|" .. remove_at_part)
+  if show_hints.remove or show_hints.remove_at then
+    local remove_part = show_hints.remove and kb.remove or nil
+    local remove_at_part = show_hints.remove_at and kb.remove_at or nil
+    local remove_hint_shown = (remove_part and remove_at_part) and (remove_part .. "|" .. remove_at_part)
       or (remove_part or remove_at_part)
-    if rhs then
-      table.insert(segments, "[" .. rhs .. "] remove")
+    if remove_hint_shown then
+      table.insert(segments, "[" .. remove_hint_shown .. "] remove")
     end
   end
-  if sh.prune_empty then
+  if show_hints.prune_empty then
     local prune = get_prune_segment()
     if prune ~= "" then
       local prune_text = prune:gsub("^ • ", "")
       table.insert(segments, prune_text)
     end
   end
-  if sh.edit_entries then
+  if show_hints.edit_entries then
     table.insert(segments, "[" .. kb.edit_entries .. "] edit")
   end
-  if sh.toggle_absolute then
-    table.insert(segments, "[" .. kb.toggle_absolute .. "] abs/rel")
+
+  local toggle_global_part = state.global_picker and "local" or "global"
+  local toggle_absolute_part = require("swiftpick.lib.picker.window").window_state.show_absolute and "rel" or "abs"
+
+  if show_hints.toggle_global_picker and show_hints.toggle_absolute then
+    table.insert(
+      segments,
+      "["
+        .. kb.toggle_global_picker
+        .. "|"
+        .. kb.toggle_absolute
+        .. "] "
+        .. toggle_global_part
+        .. "/"
+        .. toggle_absolute_part
+    )
+  elseif show_hints.toggle_global_picker then
+    table.insert(segments, "[" .. kb.toggle_global_picker .. "] " .. toggle_global_part)
+  elseif show_hints.toggle_absolute then
+    table.insert(segments, "[" .. kb.toggle_absolute .. "] " .. toggle_absolute_part)
   end
-  if sh.close_picker then
+
+  if show_hints.close_picker then
     table.insert(segments, "[" .. get_first_keybind_if_table(kb.close_picker) .. "] exit")
   end
   return "  " .. table.concat(segments, " • ") .. "  "

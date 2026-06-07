@@ -54,6 +54,7 @@ M.defaults = {
     prune_empty = true,
     edit_entries = true,
     toggle_absolute = false,
+    toggle_global_picker = false,
     close_picker = true,
     pick_highlighted_entry = true,
     exit_edit_mode = true,

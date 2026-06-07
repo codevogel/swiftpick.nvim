@@ -13,7 +13,7 @@ local function EMPTY()
   return config.values.empty_entry_identifier
 end
 
-local window_state = {
+M.window_state = {
   entry_list_buf = nil,
   edit_mode_buf = nil,
   edit_line_count = 0,
@@ -31,7 +31,7 @@ local function get_display_entries(cwd)
   else
     entries = storage.get_filenames_for_cwd(cwd)
   end
-  if window_state.show_absolute then
+  if M.window_state.show_absolute then
     return entries
   end
   local result = {}
@@ -102,27 +102,27 @@ end
 
 local function on_exit_picker(on_exit_callback)
   helper.show_cursor()
-  vim.api.nvim_buf_delete(window_state.entry_list_buf, { force = true })
-  vim.api.nvim_buf_delete(window_state.edit_mode_buf, { force = true })
+  vim.api.nvim_buf_delete(M.window_state.entry_list_buf, { force = true })
+  vim.api.nvim_buf_delete(M.window_state.edit_mode_buf, { force = true })
 
-  window_state.entry_list_buf = nil
-  window_state.picker_win = nil
+  M.window_state.entry_list_buf = nil
+  M.window_state.picker_win = nil
   if on_exit_callback then
     on_exit_callback()
   end
 end
 
 function M.create_picker_window(on_exit_callback)
-  if not window_state.default_value_for_show_absolute_set then
-    window_state.show_absolute = not config.values.show_relative_path_by_default
-    window_state.default_value_for_show_absolute_set = true
+  if not M.window_state.default_value_for_show_absolute_set then
+    M.window_state.show_absolute = not config.values.show_relative_path_by_default
+    M.window_state.default_value_for_show_absolute_set = true
   end
-  window_state.entry_list_buf = vim.api.nvim_create_buf(false, true)
-  window_state.picker_win =
-    vim.api.nvim_open_win(window_state.entry_list_buf, true, get_centered_win_config(window_state.entry_list_buf))
-  window_state.edit_mode_buf = vim.api.nvim_create_buf(false, false)
-  vim.api.nvim_buf_set_name(window_state.edit_mode_buf, "swiftpick://edit")
-  vim.bo[window_state.edit_mode_buf].buftype = "acwrite"
+  M.window_state.entry_list_buf = vim.api.nvim_create_buf(false, true)
+  M.window_state.picker_win =
+    vim.api.nvim_open_win(M.window_state.entry_list_buf, true, get_centered_win_config(M.window_state.entry_list_buf))
+  M.window_state.edit_mode_buf = vim.api.nvim_create_buf(false, false)
+  vim.api.nvim_buf_set_name(M.window_state.edit_mode_buf, "swiftpick://edit")
+  vim.bo[M.window_state.edit_mode_buf].buftype = "acwrite"
 
   -- WinLeave fires for whichever buffer is current in the picker window,
   -- so register the autocmd on both buffers.
@@ -135,10 +135,10 @@ function M.create_picker_window(on_exit_callback)
       buf = buf,
     })
   end
-  make_win_leave_autocmd(window_state.entry_list_buf)
-  make_win_leave_autocmd(window_state.edit_mode_buf)
-  binds.create_picker_keybinds(window_state.picker_win, window_state.entry_list_buf)
-  binds.create_edit_mode_keybinds(window_state.picker_win, window_state.edit_mode_buf)
+  make_win_leave_autocmd(M.window_state.entry_list_buf)
+  make_win_leave_autocmd(M.window_state.edit_mode_buf)
+  binds.create_picker_keybinds(M.window_state.picker_win, M.window_state.entry_list_buf)
+  binds.create_edit_mode_keybinds(M.window_state.picker_win, M.window_state.edit_mode_buf)
 
   M.switch_to_entry_list()
 end
@@ -147,13 +147,13 @@ function M.switch_to_entry_list()
   plugin_state.edit_mode = false
   vim.cmd("stopinsert")
 
-  vim.api.nvim_buf_set_lines(window_state.entry_list_buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
-  vim.api.nvim_win_set_buf(window_state.picker_win, window_state.entry_list_buf)
+  vim.api.nvim_buf_set_lines(M.window_state.entry_list_buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
+  vim.api.nvim_win_set_buf(M.window_state.picker_win, M.window_state.entry_list_buf)
   helper.hide_cursor()
 
-  vim.wo[window_state.picker_win].number = true
-  vim.wo[window_state.picker_win].cursorline = false
-  vim.wo[window_state.picker_win].numberwidth = NUMBERWIDTH
+  vim.wo[M.window_state.picker_win].number = true
+  vim.wo[M.window_state.picker_win].cursorline = false
+  vim.wo[M.window_state.picker_win].numberwidth = NUMBERWIDTH
 
   M.refresh_picker_window()
 end
@@ -161,20 +161,20 @@ end
 function M.switch_to_edit_mode()
   plugin_state.edit_mode = true
 
-  vim.api.nvim_buf_set_lines(window_state.edit_mode_buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
-  vim.bo[window_state.edit_mode_buf].modified = false
-  vim.api.nvim_win_set_buf(window_state.picker_win, window_state.edit_mode_buf)
+  vim.api.nvim_buf_set_lines(M.window_state.edit_mode_buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
+  vim.bo[M.window_state.edit_mode_buf].modified = false
+  vim.api.nvim_win_set_buf(M.window_state.picker_win, M.window_state.edit_mode_buf)
 
-  vim.wo[window_state.picker_win].number = true
-  vim.wo[window_state.picker_win].cursorline = true
-  vim.wo[window_state.picker_win].numberwidth = NUMBERWIDTH
+  vim.wo[M.window_state.picker_win].number = true
+  vim.wo[M.window_state.picker_win].cursorline = true
+  vim.wo[M.window_state.picker_win].numberwidth = NUMBERWIDTH
 
   helper.show_cursor()
 
   vim.api.nvim_create_autocmd("BufWriteCmd", {
     once = false,
     callback = function()
-      local lines = vim.api.nvim_buf_get_lines(window_state.edit_mode_buf, 0, -1, false)
+      local lines = vim.api.nvim_buf_get_lines(M.window_state.edit_mode_buf, 0, -1, false)
       local cwd = vim.uv.cwd()
       local seen = {}
       local valid_lines = {}
@@ -196,32 +196,32 @@ function M.switch_to_edit_mode()
       else
         storage.set_filenames_for_cwd(cwd, valid_lines)
       end
-      vim.bo[window_state.edit_mode_buf].modified = false
+      vim.bo[M.window_state.edit_mode_buf].modified = false
       vim.schedule(function()
         M.switch_to_entry_list()
       end)
     end,
-    buf = window_state.edit_mode_buf,
+    buf = M.window_state.edit_mode_buf,
   })
 
-  window_state.edit_line_count = vim.api.nvim_buf_line_count(window_state.edit_mode_buf)
+  M.window_state.edit_line_count = vim.api.nvim_buf_line_count(M.window_state.edit_mode_buf)
   vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
     once = false,
     callback = function()
-      local current_count = vim.api.nvim_buf_line_count(window_state.edit_mode_buf)
-      if current_count ~= window_state.edit_line_count then
-        window_state.edit_line_count = current_count
-        show_hints(window_state.edit_mode_buf)
+      local current_count = vim.api.nvim_buf_line_count(M.window_state.edit_mode_buf)
+      if current_count ~= M.window_state.edit_line_count then
+        M.window_state.edit_line_count = current_count
+        show_hints(M.window_state.edit_mode_buf)
       end
     end,
-    buf = window_state.edit_mode_buf,
+    buf = M.window_state.edit_mode_buf,
   })
 
   M.refresh_picker_window()
 end
 
 function M.toggle_absolute()
-  window_state.show_absolute = not window_state.show_absolute
+  M.window_state.show_absolute = not M.window_state.show_absolute
   M.refresh_picker_window()
 end
 
@@ -231,13 +231,13 @@ function M.toggle_global_picker()
 end
 
 function M.refresh_picker_window()
-  local buf = plugin_state.edit_mode and window_state.edit_mode_buf or window_state.entry_list_buf
+  local buf = plugin_state.edit_mode and M.window_state.edit_mode_buf or M.window_state.entry_list_buf
   if buf and vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
-    if buf == window_state.edit_mode_buf then
+    if buf == M.window_state.edit_mode_buf then
       vim.bo[buf].modified = false
     end
-    vim.api.nvim_win_set_config(window_state.picker_win, get_centered_win_config(buf))
+    vim.api.nvim_win_set_config(M.window_state.picker_win, get_centered_win_config(buf))
     show_hints(buf)
   end
 end
