@@ -34,14 +34,22 @@ end
 
 local function create_add_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.add, function()
-    storage.add_filename_for_cwd(vim.uv.cwd(), vim.api.nvim_buf_get_name(state.opened_from_buffer))
+    if state.global_picker then
+      storage.add_filename_global(vim.api.nvim_buf_get_name(state.opened_from_buffer))
+    else
+      storage.add_filename_for_cwd(vim.uv.cwd(), vim.api.nvim_buf_get_name(state.opened_from_buffer))
+    end
     require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
 
 local function create_remove_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.remove, function()
-    storage.remove_filename_for_cwd(vim.uv.cwd(), vim.api.nvim_buf_get_name(state.opened_from_buffer))
+    if state.global_picker then
+      storage.remove_filename_global(vim.api.nvim_buf_get_name(state.opened_from_buffer))
+    else
+      storage.remove_filename_for_cwd(vim.uv.cwd(), vim.api.nvim_buf_get_name(state.opened_from_buffer))
+    end
     require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
@@ -76,7 +84,11 @@ local function create_add_at_keybind(buf)
       return
     end
     local filename = vim.api.nvim_buf_get_name(state.opened_from_buffer)
-    storage.add_filename_at_for_cwd(vim.uv.cwd(), filename, index)
+    if state.global_picker then
+      storage.add_filename_at_global(filename, index)
+    else
+      storage.add_filename_at_for_cwd(vim.uv.cwd(), filename, index)
+    end
     require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
@@ -92,14 +104,22 @@ local function create_remove_at_keybind(buf)
     if not index then
       return
     end
-    storage.remove_filename_at_for_cwd(vim.uv.cwd(), index)
+    if state.global_picker then
+      storage.remove_filename_at_global(index)
+    else
+      storage.remove_filename_at_for_cwd(vim.uv.cwd(), index)
+    end
     require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
 
 local function create_prune_empty_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.prune_empty, function()
-    storage.prune_empty_for_cwd(vim.uv.cwd())
+    if state.global_picker then
+      storage.prune_empty_global()
+    else
+      storage.prune_empty_for_cwd(vim.uv.cwd())
+    end
     require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
@@ -166,6 +186,12 @@ local function create_exit_edit_mode_keybinds(win, buf)
   end
 end
 
+local function create_toggle_global_picker_keybind(buf)
+  create_local_buffer_keybind(buf, "n", config.values.keybinds.toggle_global_picker, function()
+    require("swiftpick.lib.picker.window").toggle_global_picker()
+  end)
+end
+
 function M.create_picker_keybinds(win, buf)
   if win == nil then
     error("Picker window number is nil. Cannot create keybinds.")
@@ -180,6 +206,7 @@ function M.create_picker_keybinds(win, buf)
   create_edit_mode_keybind(buf)
   create_pick_entry_keybinds(win, buf)
   create_toggle_absolute_keybind(buf)
+  create_toggle_global_picker_keybind(buf)
 end
 
 function M.create_edit_mode_keybinds(win, buf)

@@ -2,6 +2,7 @@ local M = {}
 
 local config = require("swiftpick.config")
 local storage = require("swiftpick.storage")
+local state = require("swiftpick.state")
 local function EMPTY()
   return config.values.empty_entry_identifier
 end
@@ -28,7 +29,7 @@ end
 
 local function get_prune_segment()
   local kb = config.values.keybinds
-  local entries = storage.get_filenames_for_cwd(vim.uv.cwd())
+  local entries = state.global_picker and storage.get_filenames_global() or storage.get_filenames_for_cwd(vim.uv.cwd())
   local has_empty = false
   for _, entry in ipairs(entries) do
     if entry == EMPTY() then

@@ -1,9 +1,12 @@
 local M = {}
 
 local config = require("swiftpick.config")
+
 local function EMPTY()
   return config.values.empty_entry_identifier
 end
+
+local GLOBAL_CWD_EQUIVALENT = "swiftpick://global"
 
 -- Reads and parses the JSON file, returns a Lua table (or {} on failure)
 local function read_data()
@@ -62,6 +65,10 @@ function M.get_filenames_for_cwd(cwd)
   return data[cwd] or {}
 end
 
+function M.get_filenames_global()
+  return M.get_filenames_for_cwd(GLOBAL_CWD_EQUIVALENT)
+end
+
 --- Adds the current buffer's filename to the list for the given cwd.
 --- Does nothing if the filename is already present.
 function M.add_filename_for_cwd(cwd, filename)
@@ -83,24 +90,8 @@ function M.add_filename_for_cwd(cwd, filename)
   write_data(data)
 end
 
---- Adds an explicit path to the list for the given cwd.
---- Does nothing if the path is already present.
-function M.add_path_for_cwd(cwd, path)
-  if not path or path == "" then
-    return
-  end
-
-  local data = read_data()
-  data[cwd] = data[cwd] or {}
-
-  for _, existing in ipairs(data[cwd]) do
-    if existing == path then
-      return
-    end
-  end
-
-  table.insert(data[cwd], path)
-  write_data(data)
+function M.add_filename_global(filename)
+  M.add_filename_for_cwd(GLOBAL_CWD_EQUIVALENT, filename)
 end
 
 --- Removes a specific filename from the list for the given cwd.
@@ -121,6 +112,10 @@ function M.remove_filename_for_cwd(cwd, filename)
   write_data(data)
 end
 
+function M.remove_filename_global(filename)
+  M.remove_filename_for_cwd(GLOBAL_CWD_EQUIVALENT, filename)
+end
+
 --- Removes all EMPTY_ENTRY_IDENTIFIER slots from the list for the given cwd.
 function M.prune_empty_for_cwd(cwd)
   local data = read_data()
@@ -137,11 +132,19 @@ function M.prune_empty_for_cwd(cwd)
   write_data(data)
 end
 
+function M.prune_empty_global()
+  M.prune_empty_for_cwd(GLOBAL_CWD_EQUIVALENT)
+end
+
 --- Replaces the entire list of filenames for the given cwd.
 function M.set_filenames_for_cwd(cwd, filenames)
   local data = read_data()
   data[cwd] = filenames
   write_data(data)
+end
+
+function M.set_filenames_global(filenames)
+  M.set_filenames_for_cwd(GLOBAL_CWD_EQUIVALENT, filenames)
 end
 
 --- Removes the entry at a specific 1-based index from the list for the given cwd.
@@ -153,6 +156,10 @@ function M.remove_filename_at_for_cwd(cwd, index)
   end
   table.remove(data[cwd], index)
   write_data(data)
+end
+
+function M.remove_filename_at_global(index)
+  M.remove_filename_at_for_cwd(GLOBAL_CWD_EQUIVALENT, index)
 end
 
 --- Adds a filename at a specific 1-based index in the list for the given cwd.
@@ -179,6 +186,10 @@ function M.add_filename_at_for_cwd(cwd, filename, index)
   end
 
   write_data(data)
+end
+
+function M.add_filename_at_global(filename, index)
+  M.add_filename_at_for_cwd(GLOBAL_CWD_EQUIVALENT, filename, index)
 end
 
 return M

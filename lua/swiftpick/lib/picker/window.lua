@@ -5,6 +5,7 @@ local helper = require("swiftpick.lib.picker.helper")
 local binds = require("swiftpick.lib.picker.binds")
 local storage = require("swiftpick.storage")
 local paths = require("swiftpick.lib.picker.paths")
+local plugin_state = require("swiftpick.state")
 
 local HINT_NAMESPACE = vim.api.nvim_create_namespace("swiftpick_hints")
 local NUMBERWIDTH = 2
@@ -24,18 +25,24 @@ local window_state = {
 }
 
 local function get_display_entries(cwd)
-  local entries = storage.get_filenames_for_cwd(cwd)
+  local entries = {}
+  if plugin_state.global_picker then
+    entries = storage.get_filenames_global()
+  else
+    entries = storage.get_filenames_for_cwd(cwd)
+  end
   if window_state.show_absolute then
     return entries
   end
   local result = {}
+  if entries == nil then
+    return result
+  end
   for _, entry in ipairs(entries) do
-    table.insert(result, paths.to_relative(entry, cwd))
+    table.insert(result, paths.to_relative(entry, plugin_state.global_picker and vim.uv.cwd() or cwd))
   end
   return result
 end
-
-local plugin_state = require("swiftpick.state")
 
 local function get_window_size(buf_size)
   local footer_size = #helper.get_picker_footer()
@@ -184,7 +191,11 @@ function M.switch_to_edit_mode()
       while #valid_lines > 0 and valid_lines[#valid_lines] == EMPTY() do
         table.remove(valid_lines)
       end
-      storage.set_filenames_for_cwd(cwd, valid_lines)
+      if plugin_state.global_picker then
+        storage.set_filenames_global(valid_lines)
+      else
+        storage.set_filenames_for_cwd(cwd, valid_lines)
+      end
       vim.bo[window_state.edit_mode_buf].modified = false
       vim.schedule(function()
         M.switch_to_entry_list()
@@ -211,6 +222,11 @@ end
 
 function M.toggle_absolute()
   window_state.show_absolute = not window_state.show_absolute
+  M.refresh_picker_window()
+end
+
+function M.toggle_global_picker()
+  plugin_state.global_picker = not plugin_state.global_picker
   M.refresh_picker_window()
 end
 
