@@ -7,6 +7,7 @@ M.defaults = {
   global_picker_by_default = false,
   empty_entry_identifier = "<empty>",
   create_default_user_commands = true,
+  default_user_command_prefix = "SwiftPick",
   keybinds = {
     open_picker = "<leader>h",
     close_picker = { "q", "<Esc>", "<C-c>" },
