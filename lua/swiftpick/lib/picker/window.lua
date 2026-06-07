@@ -1,10 +1,10 @@
 local M = {}
 
-local config = require("swiftpick2.config")
-local helper = require("swiftpick2.lib.picker.helper")
-local binds = require("swiftpick2.lib.picker.binds")
-local storage = require("swiftpick2.storage")
-local paths = require("swiftpick2.lib.picker.paths")
+local config = require("swiftpick.config")
+local helper = require("swiftpick.lib.picker.helper")
+local binds = require("swiftpick.lib.picker.binds")
+local storage = require("swiftpick.storage")
+local paths = require("swiftpick.lib.picker.paths")
 
 local HINT_NAMESPACE = vim.api.nvim_create_namespace("swiftpick_hints")
 local NUMBERWIDTH = 2
@@ -35,7 +35,7 @@ local function get_display_entries(cwd)
   return result
 end
 
-local plugin_state = require("swiftpick2.state")
+local plugin_state = require("swiftpick.state")
 
 local function get_window_size(buf_size)
   local footer_size = #helper.get_picker_footer()
@@ -215,7 +215,7 @@ function M.toggle_absolute()
 end
 
 function M.refresh_picker_window()
-  local buf = require("swiftpick2.state").edit_mode and window_state.edit_mode_buf or window_state.entry_list_buf
+  local buf = require("swiftpick.state").edit_mode and window_state.edit_mode_buf or window_state.entry_list_buf
   if buf and vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
     if buf == window_state.edit_mode_buf then

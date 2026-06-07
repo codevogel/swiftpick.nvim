@@ -1,8 +1,10 @@
 local M = {}
 
-local config = require("swiftpick2.config")
-local storage = require("swiftpick2.storage")
-local function EMPTY() return config.values.empty_entry_identifier end
+local config = require("swiftpick.config")
+local storage = require("swiftpick.storage")
+local function EMPTY()
+  return config.values.empty_entry_identifier
+end
 
 -- Store the old guicursor value so we can restore it when the picker is closed.
 local old_guicursor = nil
@@ -54,7 +56,7 @@ function M.get_picker_footer()
   local kb = config.values.keybinds
   local sh = config.values.show_hints
 
-  if require("swiftpick2.state").edit_mode then
+  if require("swiftpick.state").edit_mode then
     local segments = {}
     if sh.pick_highlighted_entry then
       table.insert(segments, "[" .. kb.pick_highlighted_entry .. "] pick entry")

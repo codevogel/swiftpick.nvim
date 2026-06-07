@@ -1,7 +1,9 @@
 local M = {}
 
-local config = require("swiftpick2.config")
-local function EMPTY() return config.values.empty_entry_identifier end
+local config = require("swiftpick.config")
+local function EMPTY()
+  return config.values.empty_entry_identifier
+end
 
 local function split_path(path)
   local parts = {}

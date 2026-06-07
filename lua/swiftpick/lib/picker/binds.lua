@@ -1,10 +1,12 @@
 local M = {}
 
-local config = require("swiftpick2.config")
-local storage = require("swiftpick2.storage")
-local state = require("swiftpick2.state")
-local paths = require("swiftpick2.lib.picker.paths")
-local function EMPTY() return config.values.empty_entry_identifier end
+local config = require("swiftpick.config")
+local storage = require("swiftpick.storage")
+local state = require("swiftpick.state")
+local paths = require("swiftpick.lib.picker.paths")
+local function EMPTY()
+  return config.values.empty_entry_identifier
+end
 
 local function create_local_buffer_keybind(buf, mode, key, callback)
   vim.keymap.set(mode, key, callback, { buffer = buf, noremap = true, silent = true })
@@ -33,14 +35,14 @@ end
 local function create_add_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.add, function()
     storage.add_filename_for_cwd(vim.uv.cwd(), vim.api.nvim_buf_get_name(state.opened_from_buffer))
-    require("swiftpick2.lib.picker.window").refresh_picker_window()
+    require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
 
 local function create_remove_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.remove, function()
     storage.remove_filename_for_cwd(vim.uv.cwd(), vim.api.nvim_buf_get_name(state.opened_from_buffer))
-    require("swiftpick2.lib.picker.window").refresh_picker_window()
+    require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
 
@@ -75,7 +77,7 @@ local function create_add_at_keybind(buf)
     end
     local filename = vim.api.nvim_buf_get_name(state.opened_from_buffer)
     storage.add_filename_at_for_cwd(vim.uv.cwd(), filename, index)
-    require("swiftpick2.lib.picker.window").refresh_picker_window()
+    require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
 
@@ -91,26 +93,26 @@ local function create_remove_at_keybind(buf)
       return
     end
     storage.remove_filename_at_for_cwd(vim.uv.cwd(), index)
-    require("swiftpick2.lib.picker.window").refresh_picker_window()
+    require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
 
 local function create_prune_empty_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.prune_empty, function()
     storage.prune_empty_for_cwd(vim.uv.cwd())
-    require("swiftpick2.lib.picker.window").refresh_picker_window()
+    require("swiftpick.lib.picker.window").refresh_picker_window()
   end)
 end
 
 local function create_toggle_absolute_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.toggle_absolute, function()
-    require("swiftpick2.lib.picker.window").toggle_absolute()
+    require("swiftpick.lib.picker.window").toggle_absolute()
   end)
 end
 
 local function create_edit_mode_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.edit_entries, function()
-    require("swiftpick2.lib.picker.window").switch_to_edit_mode()
+    require("swiftpick.lib.picker.window").switch_to_edit_mode()
   end)
 end
 
@@ -154,12 +156,12 @@ local function create_exit_edit_mode_keybinds(win, buf)
   if type(config.values.keybinds.close_picker) == "table" then
     for _, key in ipairs(config.values.keybinds.close_picker) do
       create_local_buffer_keybind(buf, "n", key, function()
-        require("swiftpick2.lib.picker.window").switch_to_entry_list()
+        require("swiftpick.lib.picker.window").switch_to_entry_list()
       end)
     end
   else
     create_local_buffer_keybind(buf, "n", config.values.keybinds.close_picker, function()
-      require("swiftpick2.lib.picker.window").switch_to_entry_list()
+      require("swiftpick.lib.picker.window").switch_to_entry_list()
     end)
   end
 end
