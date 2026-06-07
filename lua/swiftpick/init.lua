@@ -7,6 +7,12 @@ function M.setup(opts)
   config.setup(opts or {})
   storage.ensure_storage_exists()
 
+  if config.values.create_default_user_commands then
+    M.create_default_user_commands()
+  end
+end
+
+function M.create_default_user_commands()
   vim.api.nvim_create_user_command("SwiftPick", function()
     require("swiftpick.picker").open_picker()
   end, {})

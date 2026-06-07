@@ -6,6 +6,7 @@ M.defaults = {
   show_relative_path_by_default = true,
   global_picker_by_default = false,
   empty_entry_identifier = "<empty>",
+  create_default_user_commands = true,
   keybinds = {
     open_picker = "<leader>h",
     close_picker = { "q", "<Esc>", "<C-c>" },
