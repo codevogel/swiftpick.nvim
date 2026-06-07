@@ -1,8 +1,17 @@
+---@module "swiftpick"
+---@class SwiftpickModule
+---@field setup fun(opts?: SwiftpickConfig)
+---@field create_default_user_commands fun()
+
+---@type SwiftpickModule
 local M = {}
 
 local config = require("swiftpick.config")
 local storage = require("swiftpick.storage")
 
+---Bootstrap swiftpick: merge user options, ensure storage, and register user commands.
+---This should be the single entry point called from the user's Neovim config.
+---@param opts? SwiftpickConfig Partial config overrides passed directly to `config.setup()`
 function M.setup(opts)
   config.setup(opts or {})
   storage.ensure_storage_exists()
@@ -12,6 +21,9 @@ function M.setup(opts)
   end
 end
 
+---Register all built-in `:SwiftPick*` user commands using the configured prefix.
+---Each command delegates to the corresponding `storage` or `picker` function.
+---Called automatically by `setup()` when `config.create_default_user_commands` is `true`.
 function M.create_default_user_commands()
   local prefix = config.values.default_user_command_prefix
   vim.api.nvim_create_user_command(prefix .. "", function()
@@ -113,4 +125,4 @@ function M.create_default_user_commands()
   end, {})
 end
 
-return M
+return M --[[@as SwiftpickModule]]
