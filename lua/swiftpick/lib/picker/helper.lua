@@ -27,11 +27,10 @@ function M.show_cursor()
   end
 end
 
-local function get_prune_segment()
+local function get_prune_segment(display_entries)
   local kb = config.values.keybinds
-  local entries = state.global_picker and storage.get_filenames_global() or storage.get_filenames_for_cwd(vim.uv.cwd())
   local has_empty = false
-  for _, entry in ipairs(entries) do
+  for _, entry in ipairs(display_entries) do
     if entry == EMPTY() then
       has_empty = true
       break
@@ -53,7 +52,7 @@ local function get_first_keybind_if_table(keybind)
   end
 end
 
-function M.get_picker_footer()
+function M.get_picker_footer(display_entries)
   local kb = config.values.keybinds
   local show_hints = config.values.show_hints
 
@@ -88,7 +87,7 @@ function M.get_picker_footer()
     end
   end
   if show_hints.prune_empty then
-    local prune = get_prune_segment()
+    local prune = get_prune_segment(display_entries)
     if prune ~= "" then
       local prune_text = prune:gsub("^ • ", "")
       table.insert(segments, prune_text)

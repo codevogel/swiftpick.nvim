@@ -44,8 +44,8 @@ local function get_display_entries(cwd)
   return result
 end
 
-local function get_window_size(buf_size)
-  local footer_size = #helper.get_picker_footer()
+local function get_window_size(buf_size, footer)
+  local footer_size = #footer
   local padding_r = 2
   local numberwidth_extra_padding = 2
   local win_size = {
@@ -58,8 +58,9 @@ local function get_window_size(buf_size)
   return win_size
 end
 
-local function get_centered_win_config(entry_buf_nr)
-  local win_size = get_window_size(helper.get_buf_size(entry_buf_nr))
+local function get_centered_win_config(entry_buf_nr, display_entries)
+  local footer = helper.get_picker_footer(display_entries)
+  local win_size = get_window_size(helper.get_buf_size(entry_buf_nr), footer)
   local row = math.floor((vim.o.lines - win_size.height) / 2)
   local col = math.floor((vim.o.columns - win_size.width) / 2)
   return {
@@ -72,7 +73,7 @@ local function get_centered_win_config(entry_buf_nr)
     style = "minimal",
     title = plugin_state.global_picker and "swiftpick [global]" or "swiftpick",
     title_pos = "center",
-    footer = helper.get_picker_footer(),
+    footer = footer,
     footer_pos = "center",
   }
 end
@@ -118,8 +119,11 @@ function M.create_picker_window(on_exit_callback)
     M.window_state.default_value_for_show_absolute_set = true
   end
   M.window_state.entry_list_buf = vim.api.nvim_create_buf(false, true)
-  M.window_state.picker_win =
-    vim.api.nvim_open_win(M.window_state.entry_list_buf, true, get_centered_win_config(M.window_state.entry_list_buf))
+  M.window_state.picker_win = vim.api.nvim_open_win(
+    M.window_state.entry_list_buf,
+    true,
+    { relative = "editor", width = 1, height = 1, row = 0, col = 0, style = "minimal" }
+  )
   M.window_state.edit_mode_buf = vim.api.nvim_create_buf(false, false)
   vim.api.nvim_buf_set_name(M.window_state.edit_mode_buf, "swiftpick://edit")
   vim.bo[M.window_state.edit_mode_buf].buftype = "acwrite"
@@ -147,7 +151,6 @@ function M.switch_to_entry_list()
   plugin_state.edit_mode = false
   vim.cmd("stopinsert")
 
-  vim.api.nvim_buf_set_lines(M.window_state.entry_list_buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
   vim.api.nvim_win_set_buf(M.window_state.picker_win, M.window_state.entry_list_buf)
   helper.hide_cursor()
 
@@ -161,7 +164,6 @@ end
 function M.switch_to_edit_mode()
   plugin_state.edit_mode = true
 
-  vim.api.nvim_buf_set_lines(M.window_state.edit_mode_buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
   vim.bo[M.window_state.edit_mode_buf].modified = false
   vim.api.nvim_win_set_buf(M.window_state.picker_win, M.window_state.edit_mode_buf)
 
@@ -233,11 +235,12 @@ end
 function M.refresh_picker_window()
   local buf = plugin_state.edit_mode and M.window_state.edit_mode_buf or M.window_state.entry_list_buf
   if buf and vim.api.nvim_buf_is_valid(buf) then
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, get_display_entries(vim.uv.cwd()))
+    local display_entries = get_display_entries(vim.uv.cwd())
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, display_entries)
     if buf == M.window_state.edit_mode_buf then
       vim.bo[buf].modified = false
     end
-    vim.api.nvim_win_set_config(M.window_state.picker_win, get_centered_win_config(buf))
+    vim.api.nvim_win_set_config(M.window_state.picker_win, get_centered_win_config(buf, display_entries))
     show_hints(buf)
   end
 end
