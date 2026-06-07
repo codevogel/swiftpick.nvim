@@ -4,18 +4,7 @@ M.defaults = {
   filename = "swiftpick.json",
   storage_path = vim.fn.stdpath("data") .. "/swiftpick/",
   show_relative_path_by_default = true,
-  show_hints = {
-    add = true,
-    add_at = true,
-    remove = true,
-    remove_at = true,
-    prune_empty = true,
-    edit_entries = true,
-    toggle_absolute = false,
-    close_picker = true,
-    pick_highlighted_entry = true,
-    exit_edit_mode = true,
-  },
+  empty_entry_identifier = "<empty>",
   keybinds = {
     open_picker = "<leader>h",
     close_picker = { "q", "<Esc>", "<C-c>" },
@@ -55,7 +44,18 @@ M.defaults = {
       },
     },
   },
-  empty_entry_identifier = "<empty>",
+  show_hints = {
+    add = true,
+    add_at = true,
+    remove = true,
+    remove_at = true,
+    prune_empty = true,
+    edit_entries = true,
+    toggle_absolute = false,
+    close_picker = true,
+    pick_highlighted_entry = true,
+    exit_edit_mode = true,
+  },
 }
 
 M.values = {}
