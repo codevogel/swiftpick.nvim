@@ -45,7 +45,7 @@ local function create_new_storage_file()
 end
 
 -- Initialises the storage file, creating it if necessary and resetting it if it contains invalid JSON.
-function M.init_storage()
+function M.ensure_storage_exists()
   -- If the file doesn't exist or isn't writeable, attempt create it with an empty JSON object
   if vim.fn.filewritable(config.values.storage_file_path) == 0 then
     create_new_storage_file()
@@ -190,6 +190,19 @@ end
 
 function M.add_filename_at_global(filename, index)
   M.add_filename_at_for_cwd(GLOBAL_CWD_EQUIVALENT, filename, index)
+end
+
+function M.flush_local()
+  local cwd = vim.fn.getcwd()
+  M.set_filenames_for_cwd(cwd, {})
+end
+
+function M.flush_global()
+  M.set_filenames_global({})
+end
+
+function M.flush_all()
+  write_data({})
 end
 
 return M
