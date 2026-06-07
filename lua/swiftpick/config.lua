@@ -47,6 +47,7 @@ M.defaults = {
     },
   },
   show_hints = {
+    all = false,
     add = true,
     add_at = true,
     remove = true,

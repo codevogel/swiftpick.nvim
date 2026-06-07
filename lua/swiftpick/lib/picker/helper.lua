@@ -52,55 +52,60 @@ local function get_first_keybind_if_table(keybind)
   end
 end
 
+local is_hint_enabled = function(show_hint_Key)
+  local show_hints = config.values.show_hints
+  return show_hints.all or show_hint_Key
+end
+
 function M.get_picker_footer(display_entries, window_state)
   local kb = config.values.keybinds
   local show_hints = config.values.show_hints
 
   if state.edit_mode then
     local segments = {}
-    if show_hints.pick_highlighted_entry then
+    if is_hint_enabled(show_hints.pick_highlighted_entry) then
       table.insert(segments, "[" .. kb.pick_highlighted_entry .. "] pick entry")
     end
     table.insert(segments, "[:w] save changes")
-    if show_hints.exit_edit_mode then
+    if is_hint_enabled(show_hints.exit_edit_mode) then
       table.insert(segments, "[" .. get_first_keybind_if_table(kb.exit_edit_mode) .. "] exit")
     end
     return "  " .. table.concat(segments, " • ") .. "  "
   end
 
   local segments = {}
-  if show_hints.add or show_hints.add_at then
-    local add_part = show_hints.add and kb.add or nil
-    local add_at_part = show_hints.add_at and kb.add_at or nil
+  if is_hint_enabled(show_hints.add) or is_hint_enabled(show_hints.add_at) then
+    local add_part = is_hint_enabled(show_hints.add) and kb.add or nil
+    local add_at_part = is_hint_enabled(show_hints.add_at) and kb.add_at or nil
     local lhs = (add_part and add_at_part) and (add_part .. "|" .. add_at_part) or (add_part or add_at_part)
     if lhs then
       table.insert(segments, "[" .. lhs .. "] add")
     end
   end
-  if show_hints.remove or show_hints.remove_at then
-    local remove_part = show_hints.remove and kb.remove or nil
-    local remove_at_part = show_hints.remove_at and kb.remove_at or nil
-    local remove_hint_shown = (remove_part and remove_at_part) and (remove_part .. "|" .. remove_at_part)
+  if is_hint_enabled(show_hints.remove) or is_hint_enabled(show_hints.remove_at) then
+    local remove_part = is_hint_enabled(show_hints.remove) and kb.remove or nil
+    local remove_at_part = is_hint_enabled(show_hints.remove_at) and kb.remove_at or nil
+    local remove_hint_combined = (remove_part and remove_at_part) and (remove_part .. "|" .. remove_at_part)
       or (remove_part or remove_at_part)
-    if remove_hint_shown then
-      table.insert(segments, "[" .. remove_hint_shown .. "] remove")
+    if remove_hint_combined then
+      table.insert(segments, "[" .. remove_hint_combined .. "] remove")
     end
   end
-  if show_hints.prune_empty then
+  if is_hint_enabled(show_hints.prune_empty) then
     local prune = get_prune_segment(display_entries)
     if prune ~= "" then
       local prune_text = prune:gsub("^ • ", "")
       table.insert(segments, prune_text)
     end
   end
-  if show_hints.edit_entries then
+  if is_hint_enabled(show_hints.edit_entries) then
     table.insert(segments, "[" .. kb.edit_entries .. "] edit")
   end
 
   local toggle_global_part = state.global_picker and "local" or "global"
   local toggle_absolute_part = window_state.show_absolute and "rel" or "abs"
 
-  if show_hints.toggle_global_picker and show_hints.toggle_absolute then
+  if is_hint_enabled(show_hints.toggle_global_picker) and is_hint_enabled(show_hints.toggle_absolute) then
     table.insert(
       segments,
       "["
@@ -112,13 +117,13 @@ function M.get_picker_footer(display_entries, window_state)
         .. "/"
         .. toggle_absolute_part
     )
-  elseif show_hints.toggle_global_picker then
+  elseif is_hint_enabled(show_hints.toggle_global_picker) then
     table.insert(segments, "[" .. kb.toggle_global_picker .. "] " .. toggle_global_part)
-  elseif show_hints.toggle_absolute then
+  elseif is_hint_enabled(show_hints.toggle_absolute) then
     table.insert(segments, "[" .. kb.toggle_absolute .. "] " .. toggle_absolute_part)
   end
 
-  if show_hints.close_picker then
+  if is_hint_enabled(show_hints.close_picker) then
     table.insert(segments, "[" .. get_first_keybind_if_table(kb.close_picker) .. "] exit")
   end
   return "  " .. table.concat(segments, " • ") .. "  "
