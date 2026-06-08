@@ -13,7 +13,7 @@ end
 local GLOBAL_CWD_EQUIVALENT = "swiftpick://global"
 
 ---Reads and parses the JSON storage file.
----@return table  Decoded Lua table, or `{}` on any read/parse failure.
+---@return table<string, string[]>  Decoded Lua table, or `{}` on any read/parse failure.
 local function read_data()
   local file = io.open(config.values.storage_file_path, "r")
   if not file then
@@ -29,7 +29,7 @@ local function read_data()
 end
 
 ---Serialises `data` as JSON and overwrites the storage file.
----@param data table The full storage table to persist.
+---@param data table<string, string[]> The full storage table to persist.
 local function write_data(data)
   local file = io.open(config.values.storage_file_path, "w")
   if not file then

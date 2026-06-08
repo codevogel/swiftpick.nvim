@@ -10,7 +10,7 @@ local function EMPTY()
   return config.values.empty_entry_identifier
 end
 
--- Saved guicursor value restored when the picker is closed.
+---@type string?
 local old_guicursor = nil
 
 ---Hides the cursor inside the picker window by applying a fully-blended
