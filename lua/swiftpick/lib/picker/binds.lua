@@ -32,13 +32,15 @@ local function create_close_picker_keybinds(win, buf)
   -- if values.keybinds.close_picker is a table, create keybinds for each key in the table
   -- otherwise, create a single keybind for the close_picker key
   if type(config.values.keybinds.close_picker) == "table" then
-    for _, key in ipairs(config.values.keybinds.close_picker) do
+    for _, key in
+      ipairs(config.values.keybinds.close_picker --[[@as table]])
+    do
       create_local_buffer_keybind(buf, "n", key, function()
         vim.api.nvim_win_close(win, true)
       end)
     end
   else
-    create_local_buffer_keybind(buf, "n", config.values.keybinds.close_picker, function()
+    create_local_buffer_keybind(buf, "n", config.values.keybinds.close_picker --[[@as string]], function()
       vim.api.nvim_win_close(win, true)
     end)
   end
@@ -224,13 +226,15 @@ local function create_exit_edit_mode_keybinds(win, buf)
 
   -- Reuse the close_picker key(s) to exit edit mode instead of closing.
   if type(config.values.keybinds.close_picker) == "table" then
-    for _, key in ipairs(config.values.keybinds.close_picker) do
+    for _, key in
+      ipairs(config.values.keybinds.close_picker --[[@as table]])
+    do
       create_local_buffer_keybind(buf, "n", key, function()
         require("swiftpick.lib.picker.window").switch_to_entry_list()
       end)
     end
   else
-    create_local_buffer_keybind(buf, "n", config.values.keybinds.close_picker, function()
+    create_local_buffer_keybind(buf, "n", config.values.keybinds.close_picker --[[@as string]], function()
       require("swiftpick.lib.picker.window").switch_to_entry_list()
     end)
   end

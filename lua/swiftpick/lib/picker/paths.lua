@@ -77,7 +77,7 @@ end
 ---Returns the EMPTY sentinel unchanged when `path` equals the sentinel.
 ---Returns `path` unchanged when it is already absolute (starts with `/`).
 ---@param path string  Relative or absolute file path.
----@param cwd  string  Absolute path of the working directory to resolve against.
+---@param cwd  string?  Absolute path of the working directory to resolve against.
 ---@return string  Absolute path with trailing slash removed, or EMPTY sentinel.
 function M.to_absolute(path, cwd)
   if type(path) ~= "string" then

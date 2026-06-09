@@ -82,10 +82,14 @@ end
 
 ---Appends `filename` to the stored list for the given cwd.
 ---Does nothing if `filename` is empty or already present (no duplicates).
----@param cwd      string Absolute path to the working directory key.
+---@param cwd      string? Absolute path to the working directory key.
 ---@param filename string Absolute path of the file to add.
 function M.add_filename_for_cwd(cwd, filename)
   if filename == "" then
+    return
+  end
+  if cwd == nil or cwd == "" then
+    vim.notify("Cannot add file to storage: cwd is nil or empty", vim.log.levels.ERROR)
     return
   end
 
@@ -111,9 +115,14 @@ end
 
 ---Removes the first occurrence of `filename` from the stored list for the given cwd.
 ---Does nothing when the cwd has no entries or `filename` is not found.
----@param cwd      string Absolute path to the working directory key.
+---@param cwd      string? Absolute path to the working directory key.
 ---@param filename string Absolute path of the file to remove.
 function M.remove_filename_for_cwd(cwd, filename)
+  if cwd == nil or cwd == "" then
+    vim.notify("Cannot add file to storage: cwd is nil or empty", vim.log.levels.ERROR)
+    return
+  end
+
   local data = read_data()
   if not data[cwd] then
     return
@@ -137,8 +146,13 @@ function M.remove_filename_global(filename)
 end
 
 ---Removes all EMPTY sentinel slots from the stored list for the given cwd.
----@param cwd string Absolute path to the working directory key.
+---@param cwd string? Absolute path to the working directory key.
 function M.prune_empty_for_cwd(cwd)
+  if cwd == nil or cwd == "" then
+    vim.notify("Cannot add file to storage: cwd is nil or empty", vim.log.levels.ERROR)
+    return
+  end
+
   local data = read_data()
   if not data[cwd] then
     return
@@ -159,9 +173,14 @@ function M.prune_empty_global()
 end
 
 ---Replaces the entire stored list for the given cwd with `filenames`.
----@param cwd       string   Absolute path to the working directory key.
+---@param cwd       string?   Absolute path to the working directory key.
 ---@param filenames string[] New ordered list of file paths to store.
 function M.set_filenames_for_cwd(cwd, filenames)
+  if cwd == nil or cwd == "" then
+    vim.notify("Cannot add file to storage: cwd is nil or empty", vim.log.levels.ERROR)
+    return
+  end
+
   local data = read_data()
   data[cwd] = filenames
   write_data(data)
@@ -175,9 +194,14 @@ end
 
 ---Removes the entry at a specific 1-based index from the stored list for the given cwd.
 ---Does nothing when the cwd has no entries or the index is out of range.
----@param cwd   string  Absolute path to the working directory key.
+---@param cwd   string?  Absolute path to the working directory key.
 ---@param index integer 1-based index of the slot to remove.
 function M.remove_filename_at_for_cwd(cwd, index)
+  if cwd == nil or cwd == "" then
+    vim.notify("Cannot add file to storage: cwd is nil or empty", vim.log.levels.ERROR)
+    return
+  end
+
   local data = read_data()
   if not data[cwd] or not data[cwd][index] then
     return
@@ -200,13 +224,19 @@ end
 --- - **Index is beyond the list end** → preceding gaps are padded with EMPTY sentinels first.
 ---
 ---Does nothing when `filename` is empty.
----@param cwd      string  Absolute path to the working directory key.
+---@param cwd      string?  Absolute path to the working directory key.
 ---@param filename string  Absolute path of the file to insert.
 ---@param index    integer 1-based target slot index.
 function M.add_filename_at_for_cwd(cwd, filename, index)
   if filename == "" then
     return
   end
+
+  if cwd == nil or cwd == "" then
+    vim.notify("Cannot add file to storage: cwd is nil or empty", vim.log.levels.ERROR)
+    return
+  end
+
   local data = read_data()
   data[cwd] = data[cwd] or {}
   local list = data[cwd]
