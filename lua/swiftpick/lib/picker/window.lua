@@ -36,7 +36,12 @@ local window_state = {
   picker_win = nil,
   old_statuscolumn = nil,
   show_absolute = false,
+  default_value_for_global_picker_set = false,
   default_value_for_show_absolute_set = false,
+  before_overrides = {
+    show_absolute = nil,
+    global_picker = nil,
+  },
   HINT_NS = vim.api.nvim_create_namespace("swiftpick_hints"),
 }
 
@@ -142,16 +147,69 @@ end
 
 ---Tear down the picker: show cursor, delete both buffers, and invoke the exit callback.
 ---@param on_exit_callback function|nil Optional callback invoked after cleanup.
-local function on_exit_picker(on_exit_callback)
+---@param overrides_applied { show_absolute?: boolean, global_picker?: boolean } (For testing/debugging) which options were overridden when the picker was opened.
+local function on_exit_picker(on_exit_callback, overrides_applied)
   helper.show_cursor()
   vim.api.nvim_buf_delete(window_state.entry_list_buf, { force = true })
   vim.api.nvim_buf_delete(window_state.edit_mode_buf, { force = true })
 
   window_state.entry_list_buf = nil
   window_state.picker_win = nil
+
+  if overrides_applied.show_absolute then
+    window_state.show_absolute = window_state.before_overrides.show_absolute
+    window_state.before_overrides.show_absolute = nil
+  end
+
+  if overrides_applied.global_picker then
+    plugin_state.global_picker = window_state.before_overrides.global_picker
+    window_state.before_overrides.global_picker = nil
+  end
+
   if on_exit_callback then
     on_exit_callback()
   end
+end
+
+-- Apply options passed from the picker opener,
+-- falling back to config or current state if not set.
+---@param opts SwiftpickOpenPickerOverrides|nil
+---@return { show_absolute: boolean, global_picker: boolean } Indicates which options were overridden (for testing/debugging purposes).
+local function apply_open_picker_overrides(opts)
+  local show_absolute_overridden = false
+  local global_picker_overridden = false
+
+  if opts then
+    if opts.relative_path ~= nil then
+      window_state.before_overrides.show_absolute = window_state.show_absolute
+      window_state.show_absolute = not opts.relative_path
+      show_absolute_overridden = true
+    end
+
+    if opts.global_picker ~= nil then
+      window_state.before_overrides.global_picker = plugin_state.global_picker
+      plugin_state.global_picker = opts.global_picker
+      global_picker_overridden = true
+    end
+  end
+
+  -- Apply defaults only if not overridden and not already initialized
+  if not show_absolute_overridden and not window_state.default_value_for_show_absolute_set then
+    window_state.show_absolute = not config.values.show_relative_path_by_default
+    window_state.default_value_for_show_absolute_set = true
+  end
+
+  if not global_picker_overridden and not window_state.default_value_for_global_picker_set then
+    plugin_state.global_picker = config.values.global_picker_by_default
+    window_state.default_value_for_global_picker_set = true
+  end
+
+  local overrides_applied = {
+    show_absolute = show_absolute_overridden,
+    global_picker = global_picker_overridden,
+  }
+
+  return overrides_applied
 end
 
 ---Create and open the picker floating window.
@@ -165,12 +223,11 @@ end
 ---buffer is currently displayed.
 ---
 ---@param on_exit_callback function Callback invoked when the picker window is closed.
-function M.create_picker_window(on_exit_callback)
+---@param open_picker_overrides SwiftpickOpenPickerOverrides|nil Options passed from the picker opener (currently unused, but may be forwarded to config defaults in the future).
+function M.create_picker_window(on_exit_callback, open_picker_overrides)
   -- Initialise the show_absolute toggle from config on first open only.
-  if not window_state.default_value_for_show_absolute_set then
-    window_state.show_absolute = not config.values.show_relative_path_by_default
-    window_state.default_value_for_show_absolute_set = true
-  end
+  local overrides_applied = apply_open_picker_overrides(open_picker_overrides)
+
   window_state.entry_list_buf = vim.api.nvim_create_buf(false, true)
   -- Open with a minimal 1×1 size; refresh_picker_window will resize it correctly.
   window_state.picker_win = vim.api.nvim_open_win(
@@ -190,7 +247,7 @@ function M.create_picker_window(on_exit_callback)
     vim.api.nvim_create_autocmd("WinLeave", {
       once = true,
       callback = function()
-        on_exit_picker(on_exit_callback)
+        on_exit_picker(on_exit_callback, overrides_applied)
       end,
       buf = buf,
     })
