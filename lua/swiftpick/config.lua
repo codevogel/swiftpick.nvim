@@ -1,188 +1,129 @@
----@class SwiftpickPickEntryKeys
----@field _1 string?
----@field _2 string?
----@field _3 string?
----@field _4 string?
----@field _5 string?
----@field _6 string?
----@field _7 string?
----@field _8 string?
----@field _9 string?
----@field _10 string?
+---@module "swiftpick.config"
 
----@class SwiftpickPickEntryKeybinds
----@field chars SwiftpickPickEntryKeys
----@field digits SwiftpickPickEntryKeys
-
----@class SwiftpickKeybinds
----@field open_picker string
----@field close_picker string|string[]
----@field exit_edit_mode string|string[]
----@field add string
----@field add_at string
----@field remove string
----@field remove_at string
----@field prune_empty string
----@field edit_entries string
----@field toggle_global_picker string
----@field toggle_absolute string
----@field pick_highlighted_entry string
----@field pick_entry SwiftpickPickEntryKeybinds
-
----@class SwiftpickShowHints
----@field all boolean
----@field add boolean
----@field add_at boolean
----@field remove boolean
----@field remove_at boolean
----@field prune_empty boolean
----@field edit_entries boolean
----@field toggle_absolute boolean
----@field toggle_global_picker boolean
----@field close_picker boolean
----@field pick_highlighted_entry boolean
----@field exit_edit_mode boolean
-
----@class SwiftpickPickEntryKeybindsOpts
----@field chars? SwiftpickPickEntryKeys
----@field digits? SwiftpickPickEntryKeys
-
----@class SwiftpickKeybindsOpts
----@field open_picker? string
----@field close_picker? string|string[]
----@field exit_edit_mode? string|string[]
----@field add? string
----@field add_at? string
----@field remove? string
----@field remove_at? string
----@field prune_empty? string
----@field edit_entries? string
----@field toggle_global_picker? string
----@field toggle_absolute? string
----@field pick_highlighted_entry? string
----@field pick_entry? SwiftpickPickEntryKeybindsOpts
-
----@class SwiftpickShowHintsOpts
----@field all? boolean
----@field add? boolean
----@field add_at? boolean
----@field remove? boolean
----@field remove_at? boolean
----@field prune_empty? boolean
----@field edit_entries? boolean
----@field toggle_absolute? boolean
----@field toggle_global_picker? boolean
----@field close_picker? boolean
----@field pick_highlighted_entry? boolean
----@field exit_edit_mode? boolean
-
----@class SwiftpickConfigOpts
----@field filename? string
----@field storage_path? string
----@field show_relative_path_by_default? boolean
----@field global_picker_by_default? boolean
----@field empty_entry_identifier? string
----@field create_default_user_commands? boolean
----@field default_user_command_prefix? string
----@field keybinds? SwiftpickKeybindsOpts
----@field show_hints? SwiftpickShowHintsOpts
-
----@class SwiftpickConfig
----@field filename string
----@field storage_path string
----@field storage_file_path? string Derived full path; set by `setup()`.
----@field show_relative_path_by_default boolean
----@field global_picker_by_default boolean
----@field empty_entry_identifier string
----@field create_default_user_commands boolean
----@field default_user_command_prefix string
----@field keybinds SwiftpickKeybinds
----@field show_hints SwiftpickShowHints
-
+---Configuration management for SwiftPick, including default values, user-provided options, and derived values.
+---@class SwiftpickConfigModule
 local M = {}
 
----@type SwiftpickConfig
-M.defaults = {
-  filename = "swiftpick.json",
-  storage_path = vim.fn.stdpath("data") .. "/swiftpick/",
-  show_relative_path_by_default = true,
-  global_picker_by_default = false,
-  empty_entry_identifier = "<empty>",
-  create_default_user_commands = true,
-  default_user_command_prefix = "SwiftPick",
-  keybinds = {
-    open_picker = "<leader>h",
-    close_picker = { "q", "<Esc>", "<C-c>" },
-    exit_edit_mode = { "q", "<Esc>", "<C-c>" },
-    add = "a",
-    add_at = "A",
-    remove = "r",
-    remove_at = "R",
-    prune_empty = "p",
-    edit_entries = "e",
-    toggle_global_picker = "t",
-    toggle_absolute = "T",
-    pick_highlighted_entry = "<CR>",
-    pick_entry = {
-      chars = {
-        _1 = "h",
-        _2 = "j",
-        _3 = "k",
-        _4 = "l",
-        _5 = nil,
-        _6 = nil,
-        _7 = nil,
-        _8 = nil,
-        _9 = nil,
-        _10 = nil,
-      },
-      digits = {
-        _1 = "1",
-        _2 = "2",
-        _3 = "3",
-        _4 = "4",
-        _5 = "5",
-        _6 = "6",
-        _7 = "7",
-        _8 = "8",
-        _9 = "9",
-        _10 = "0",
-      },
-    },
+--- Configuration options for SwiftPick.
+---@class SwiftpickConfigOpts
+M.defaults = {}
+
+---@type string The name of the JSON file where SwiftPick data is stored. Must end with '.json'.
+M.defaults.filename = "swiftpick.json"
+---@type string The path to the directory where SwiftPick data is stored. Defaults to Neovim's standard data path.
+M.defaults.storage_path = vim.fn.stdpath("data") .. "/swiftpick/"
+---@type boolean Whether to display absolute paths in the picker by default. If false, paths will be displayed relative to the current working directory.
+M.defaults.display_absolute_path_by_default = false
+---@type boolean Whether to use the global storage context by default.
+M.defaults.use_global_context_by_default = false
+---@type string The identifier used to represent empty entries in the picker.
+M.defaults.empty_entry_identifier = "<empty>"
+---@type boolean Whether to create default user commands for SwiftPick.
+M.defaults.create_default_user_commands = true
+---@type string The prefix for default user commands created by SwiftPick.
+M.defaults.default_user_command_prefix = "SwiftPick"
+
+---Keybinds that are available when the picker window is open. These keybinds are non-conflicting with your other keybinds, as they are only active when the picker window is open.
+---@class SwiftpickKeybindOpts
+M.defaults.keybinds = {}
+---@type string Keybind to open the SwiftPick picker window.
+M.defaults.keybinds.open_picker = "<leader>h"
+---@type string[] Keybinds to close the SwiftPick picker window.
+M.defaults.keybinds.close_picker = { "q", "<Esc>", "<C-c>" }
+---@type string[] Keybinds to close the SwiftPick picker window.
+M.defaults.keybinds.exit_edit_mode = { "q", "<Esc>", "<C-c>" }
+---@type string Keybind to add the file that the picker was opened from to the picker list.
+M.defaults.keybinds.add = "a"
+---@type string Keybind to add the file that the picker was opened from to the picker list at a specific index.
+M.defaults.keybinds.add_at = "A"
+---@type string Keybind to remove the file that the picker was opened from from the picker list.
+M.defaults.keybinds.remove = "r"
+---@type string Keybind to remove the file that the picker was opened from from the picker list at a specific index.
+M.defaults.keybinds.remove_at = "R"
+---@type string Keybind to prune all empty entries from the picker list.
+M.defaults.keybinds.prune_empty = "p"
+---@type string Keybind to enter edit mode for the picker list.
+M.defaults.keybinds.edit_entries = "e"
+---@type string Keybind to toggle the use of the global storage context for the picker list.
+M.defaults.keybinds.toggle_use_global_context = "t"
+---@type string Keybind to toggle the display of absolute paths in the picker list.
+M.defaults.keybinds.toggle_display_absolute_paths = "T"
+---@type string Keybind to pick the currently highlighted entry in edit mode.
+M.defaults.keybinds.pick_highlighted_entry = "<CR>"
+
+---Keybinds to pick specific entries in the picker list by index.
+---@class SwiftpickPickEntryKeybindOpts
+M.defaults.keybinds.pick_entry = {
+  ---@type table<string, string|nil> Keybinds to pick specific entries in the picker list by index.
+  chars = {
+    _1 = "h",
+    _2 = "j",
+    _3 = "k",
+    _4 = "l",
+    _5 = nil,
+    _6 = nil,
+    _7 = nil,
+    _8 = nil,
+    _9 = nil,
+    _10 = nil,
   },
-  show_hints = {
-    all = false,
-    add = true,
-    add_at = true,
-    remove = true,
-    remove_at = true,
-    prune_empty = true,
-    edit_entries = true,
-    toggle_absolute = false,
-    toggle_global_picker = false,
-    close_picker = true,
-    pick_highlighted_entry = true,
-    exit_edit_mode = true,
+  ---@type table<string, string|nil> Keybinds to pick specific entries in the picker list by index using digits.
+  digits = {
+    _1 = "1",
+    _2 = "2",
+    _3 = "3",
+    _4 = "4",
+    _5 = "5",
+    _6 = "6",
+    _7 = "7",
+    _8 = "8",
+    _9 = "9",
+    _10 = "0",
   },
 }
 
----@type SwiftpickConfig
-M.values = vim.deepcopy(M.defaults)
+---Options for which hints to show in the picker window. These hints indicate which keybinds to use for different actions, and can be toggled on or off based on user preference.
+---@class SwiftpickShowHintsOpts
+M.defaults.show_hints = {
+  all = false,
+  add = true,
+  add_at = true,
+  remove = true,
+  remove_at = true,
+  prune_empty = true,
+  switch_to_edit_mode = true,
+  toggle_display_absolute_paths = false,
+  toggle_use_global_context = false,
+  close_picker = true,
+  pick_highlighted_entry = true,
+  exit_edit_mode = true,
+}
 
+---Derived configuration values for SwiftPick, merged from user-provided options and defaults.
+---This is the table to use for all configuration values in SwiftPick, as it contains the final merged values.
+---@class SwiftpickConfigValues : SwiftpickConfigOpts
+M.values = {}
+---@type string|nil The absolute path to the storage file where SwiftPick data is stored, derived from `storage_path` and `filename`.
+M.values.storage_file_path = nil
+
+---Bootstrap the SwiftPick configuration with user-provided options.
 ---@param opts? SwiftpickConfigOpts
 function M.setup(opts)
   -- Deep-merge user opts over a copy of defaults so defaults are never mutated.
-  M.values = vim.tbl_deep_extend("force", vim.deepcopy(M.defaults), opts or {})
+
+  local merged_opts = vim.tbl_deep_extend("force", vim.deepcopy(M.defaults), opts or {})
 
   -- verify filename opt is valid
-  if not M.values.filename:match("%.json$") then
+  if not merged_opts.filename:match("%.json$") then
     error("Filename must end with .json")
   end
-  if not M.values.storage_path:match("/$") then
-    M.values.storage_path = M.values.storage_path .. "/"
+  if not merged_opts.storage_path:match("/$") then
+    merged_opts.storage_path = merged_opts.storage_path .. "/"
   end
-  -- Derive the full storage file path from the (possibly corrected) parts.
-  M.values.storage_file_path = M.values.storage_path .. M.values.filename
+
+  M.values = vim.tbl_extend("force", merged_opts, {
+    storage_file_path = merged_opts.storage_path .. merged_opts.filename,
+  })
 end
 
 return M

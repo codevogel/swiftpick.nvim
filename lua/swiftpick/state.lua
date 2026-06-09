@@ -1,28 +1,55 @@
----Shared mutable state for the swiftpick picker.
----
----All fields are accessed and mutated directly on this module table
----(e.g. `state.opened = true`), making this module a lightweight singleton.
----The `state` sub-table below documents the expected fields and their initial
----values but is not read at runtime.
 ---@class SwiftpickState
----@field opened                boolean|nil Whether the picker window is currently open
----@field opened_from_window    integer|nil Window handle that was active when the picker was opened; restored on close
----@field opened_from_buffer    integer|nil Buffer handle that was active when the picker was opened
----@field pending_at_action     any|nil     Stored context for a deferred add-at / remove-at operation
----@field edit_mode             boolean|nil Whether the picker is currently in edit mode
----@field global_picker         boolean|nil Whether the global (cross-cwd) entry list is active
 
----@type SwiftpickState
+local config = require("swiftpick.config")
+
+---Shared mutable state for the swiftpick picker.
+---@class SwiftpickState
 local M = {}
 
----Initial/default values documenting the fields managed on this module table.
-M.state = {
-  opened = false,
-  opened_from_window = nil,
-  opened_from_buffer = nil,
-  pending_at_action = nil,
-  edit_mode = false,
-  global_picker = false,
+---@type { buf: integer?, win: integer? } Tracks the buffer and window from which the currently open picker was launched, or `nil` if no picker is open.
+M.opened_picker_from = {
+  ---@type integer? The buffer number of the buffer from which the picker was opened, or `nil` if no picker is open.
+  buf = nil,
+  ---@type integer? The window number of the window from which the picker was opened, or `nil` if no picker is open.
+  win = nil,
 }
+
+---@type boolean? Whether the picker is currently in edit mode, or `nil` if the picker is not open.
+M.edit_mode = nil
+---@type integer? The buffer number of the picker list buffer, or `nil` if the picker is not open.
+M.picker_list_buf = nil
+---@type integer? The buffer number of the picker list edit buffer, or `nil` if the picker is not open.
+M.picker_list_edit_buf = nil
+---@type integer? The window number of the picker list window, or `nil` if the picker is not open.
+M.picker_win = nil
+---@type boolean? The window number of the picker list edit window, or `nil` if the picker is not open.
+M.display_absolute_paths = nil
+---@type boolean? Whether to use the global storage context for the picker, or `nil` if the picker is not open.
+M.use_global_context = nil
+
+---Session memory for the swiftpick picker.
+---This is used to store values that should persist across multiple invocations of the picker within the same Neovim session.
+---@class SwiftpickSessionMemory
+M.session_memory = {
+  ---@type boolean Whether to display absolute paths by default when opening the picker.
+  default_value_for_use_global_context_set = false,
+  ---@type boolean Whether to use the global storage context by default when opening the picker.
+  default_value_for_display_absolute_paths_set = false,
+  ---@class SwiftpickSessionOverrideMemory
+  before_overrides = {
+    ---@type boolean? Whether to display absolute paths, or `nil` if the picker was not open.
+    display_absolute_paths = nil,
+    ---@type boolean? Whether to use the global storage context, or `nil` if the picker was not open.
+    use_global_context = nil,
+  },
+}
+
+---Initializes the state module with default values from the configuration.
+---@return nil
+M.initialize = function()
+  M.edit_mode = false
+  M.display_absolute_paths = config.values.display_absolute_path_by_default
+  M.use_global_context = config.values.use_global_context_by_default
+end
 
 return M

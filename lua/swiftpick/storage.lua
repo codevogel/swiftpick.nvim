@@ -1,4 +1,5 @@
-local M = {}
+---Module for managing the storage of file paths in SwiftPicks' JSON file.
+---@module "swiftpick.storage"
 
 local config = require("swiftpick.config")
 
@@ -50,6 +51,10 @@ local function create_new_storage_file()
   file:close()
 end
 
+---Provides functions to manage the storage of file paths in SwiftPicks' JSON file.
+---@class SwiftpickStorageModule
+local M = {}
+
 ---Ensures the storage file exists and contains valid JSON.
 ---Creates a fresh file when it is missing, not writable, or holds invalid JSON.
 function M.ensure_storage_exists()
@@ -78,6 +83,15 @@ end
 ---@return string[]
 function M.get_filenames_global()
   return M.get_filenames_for_cwd(GLOBAL_CWD_EQUIVALENT)
+end
+
+function M.get_filename_at_for_cwd(cwd, index)
+  local list = M.get_filenames_for_cwd(cwd)
+  return list[index]
+end
+
+function M.get_filename_at_global(index)
+  return M.get_filename_at_for_cwd(GLOBAL_CWD_EQUIVALENT, index)
 end
 
 ---Appends `filename` to the stored list for the given cwd.

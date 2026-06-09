@@ -1,35 +1,13 @@
-local M = {}
+---Helper module for constructing the footer string shown in the picker window.
+---@module "swiftpick.helper.footer"
 
 local config = require("swiftpick.config")
-local storage = require("swiftpick.storage")
 local state = require("swiftpick.state")
 
 ---Returns the configured sentinel string for empty slots.
 ---@return string
 local function EMPTY()
   return config.values.empty_entry_identifier
-end
-
----@type string?
-local old_guicursor = nil
-
----Hides the cursor inside the picker window by applying a fully-blended
----highlight group to the cursor option string. The original value is saved
----so it can be restored by `show_cursor()`.
-function M.hide_cursor()
-  if old_guicursor == nil then
-    old_guicursor = vim.o.guicursor
-  end
-  vim.api.nvim_set_hl(0, "SwiftpickCursor", { blend = 100, nocombine = true })
-  vim.opt.guicursor:append("a:SwiftpickCursor/SwiftpickCursor")
-end
-
----Restores the original `guicursor` value saved by `hide_cursor()`.
-function M.show_cursor()
-  if old_guicursor ~= nil then
-    vim.o.guicursor = old_guicursor
-    old_guicursor = nil
-  end
 end
 
 ---Returns a prune-hint segment if the display list contains at least one EMPTY sentinel,
@@ -74,16 +52,17 @@ local is_hint_enabled = function(show_hint_Key)
   return show_hints.all or show_hint_Key
 end
 
+---@class FooterHelper Helper class for constructing the footer string shown in the picker window.
+local M = {}
+
 ---Build the footer string shown at the bottom of the picker window.
 ---
 ---The footer is context-sensitive: it shows different hints depending on whether
 ---the picker is in normal mode or edit mode, and only includes segments for
 ---hint flags that are enabled in the config.
----
 ---@param display_entries string[]     Current list of display paths (used for prune hint detection).
----@param window_state    table        Local window state table from `window.lua` (needs `.show_absolute`).
 ---@return string  Padded footer string ready to pass to `nvim_open_win` / `nvim_win_set_config`.
-function M.get_picker_footer(display_entries, window_state)
+function M.get_picker_footer(display_entries)
   local kb = config.values.keybinds
   local show_hints = config.values.show_hints
 
@@ -130,15 +109,17 @@ function M.get_picker_footer(display_entries, window_state)
       table.insert(segments, prune_text)
     end
   end
-  if is_hint_enabled(show_hints.edit_entries) then
+  if is_hint_enabled(show_hints.switch_to_edit_mode) then
     table.insert(segments, "[" .. kb.edit_entries .. "] edit")
   end
 
   -- Toggle hints describe what the key will *switch to*, not the current state.
-  local toggle_global_part = state.global_picker and "local" or "global"
-  local toggle_absolute_part = window_state.show_absolute and "rel" or "abs"
+  local toggle_global_part = state.use_global_context and "local" or "global"
+  local toggle_absolute_part = state.display_absolute_paths and "abs" or "rel"
 
-  if is_hint_enabled(show_hints.toggle_global_picker) and is_hint_enabled(show_hints.toggle_absolute) then
+  if
+    is_hint_enabled(show_hints.toggle_use_global_context) and is_hint_enabled(show_hints.toggle_display_absolute_paths)
+  then
     -- Combine both toggle hints into a single segment when both are enabled.
     table.insert(
       segments,
@@ -151,9 +132,9 @@ function M.get_picker_footer(display_entries, window_state)
         .. "/"
         .. toggle_absolute_part
     )
-  elseif is_hint_enabled(show_hints.toggle_global_picker) then
+  elseif is_hint_enabled(show_hints.toggle_use_global_context) then
     table.insert(segments, "[" .. kb.toggle_global_picker .. "] " .. toggle_global_part)
-  elseif is_hint_enabled(show_hints.toggle_absolute) then
+  elseif is_hint_enabled(show_hints.toggle_display_absolute_paths) then
     table.insert(segments, "[" .. kb.toggle_absolute .. "] " .. toggle_absolute_part)
   end
 
@@ -161,27 +142,6 @@ function M.get_picker_footer(display_entries, window_state)
     table.insert(segments, "[" .. get_first_keybind_if_table(kb.close_picker) .. "] exit")
   end
   return "  " .. table.concat(segments, " • ") .. "  "
-end
-
----Measures the content of a buffer and returns its width and height.
----Used to compute the initial floating window dimensions before it is displayed.
----@param entry_buf_nr integer Buffer handle to measure.
----@return { width: integer, height: integer }  Width is the longest line length; height is the line count.
-function M.get_buf_size(entry_buf_nr)
-  local line_count = vim.api.nvim_buf_line_count(entry_buf_nr)
-
-  local max_line_length = 0
-  for i = 1, line_count do
-    local line_length = #vim.api.nvim_buf_get_lines(entry_buf_nr, i - 1, i, false)[1]
-    if line_length > max_line_length then
-      max_line_length = line_length
-    end
-  end
-
-  return {
-    width = max_line_length,
-    height = line_count,
-  }
 end
 
 return M

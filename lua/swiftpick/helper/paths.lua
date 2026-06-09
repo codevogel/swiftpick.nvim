@@ -1,4 +1,5 @@
-local M = {}
+---Helper functions for manipulating file paths
+---@module "swiftpick.helper.paths"
 
 local config = require("swiftpick.config")
 
@@ -18,6 +19,9 @@ local function split_path(path)
   end
   return parts
 end
+
+---@class PathHelper
+local M = {}
 
 ---Convert an absolute path to a path relative to `cwd`, using `../` notation.
 ---
@@ -89,7 +93,7 @@ function M.to_absolute(path, cwd)
   if path:sub(1, 1) == "/" then
     return path
   end
-  return vim.fn.fnamemodify(cwd .. "/" .. path, ":p"):gsub("/$", "")
+  return (vim.fn.fnamemodify(cwd .. "/" .. path, ":p"):gsub("/$", ""))
 end
 
 return M
