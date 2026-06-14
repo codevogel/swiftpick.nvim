@@ -13,6 +13,14 @@ end
 ---Virtual cwd key used to store the global (cross-project) file list.
 local GLOBAL_CWD_EQUIVALENT = "swiftpick://global"
 
+---Removes trailing EMPTY sentinel slots from a list in-place.
+---@param list string[]
+local function trim_trailing_empty(list)
+  while #list > 0 and list[#list] == EMPTY() do
+    table.remove(list)
+  end
+end
+
 ---Reads and parses the JSON storage file.
 ---@return table<string, string[]>  Decoded Lua table, or `{}` on any read/parse failure.
 local function read_data()
@@ -240,6 +248,9 @@ end
 --- - **Slot is EMPTY sentinel** → the sentinel is replaced in-place.
 --- - **Slot holds a real entry** → `filename` is inserted, shifting subsequent entries down.
 --- - **Index is beyond the list end** → preceding gaps are padded with EMPTY sentinels first.
+--- - **`filename` already exists** → old slot is replaced with EMPTY, then:
+---   - destination EMPTY slot is replaced in-place, or
+---   - destination real entry is shifted via insertion.
 ---
 ---Does nothing when `filename` is empty.
 ---@param cwd      string?  Absolute path to the working directory key.
@@ -258,6 +269,38 @@ function M.add_filename_at_for_cwd(cwd, filename, index)
   local data = read_data()
   data[cwd] = data[cwd] or {}
   local list = data[cwd]
+
+  local existing_index = nil
+  for i, existing in ipairs(list) do
+    if existing == filename then
+      existing_index = i
+      break
+    end
+  end
+
+  if existing_index then
+    -- Keep slot structure stable at the previous location and move the file by inserting
+    -- at the new index (which shifts subsequent entries).
+    list[existing_index] = EMPTY()
+
+    if #list < index then
+      for i = #list + 1, index - 1 do
+        list[i] = EMPTY()
+      end
+      list[index] = filename
+    elseif list[index] == EMPTY() then
+      -- Reuse placeholder slots instead of creating extra gaps.
+      list[index] = filename
+    else
+      table.insert(list, index, filename)
+    end
+
+    -- Once the last real entry is reached, trailing placeholders are unnecessary.
+    trim_trailing_empty(list)
+
+    write_data(data)
+    return
+  end
 
   if #list < index then
     -- Pad any gap between the current end of the list and the target index
