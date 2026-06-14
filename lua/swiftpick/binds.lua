@@ -4,6 +4,7 @@
 local config = require("swiftpick.config")
 local state = require("swiftpick.state")
 local actions = require("swiftpick.actions")
+local storage = require("swiftpick.storage")
 
 ---Set a buffer-local normal-mode keymap that does not remap and is silent.
 ---@param buf      integer  Buffer handle to scope the keymap to.
@@ -154,6 +155,11 @@ local function create_pick_entry_keybinds(buf)
   local key_map = pick_entry_key_to_index()
   for key, index in pairs(key_map) do
     create_local_buffer_keybind(buf, "n", key, function()
+      local entries = state.use_global_context and storage.get_filenames_global()
+        or storage.get_filenames_for_cwd(vim.uv.cwd() --[[@as string]])
+      if index < 1 or index > #entries then
+        return
+      end
       actions.pick_file(index)
     end)
   end
@@ -164,12 +170,13 @@ end
 ---@return nil
 local function create_pick_highlighted_entry_keybind(buf)
   create_local_buffer_keybind(buf, "n", config.values.keybinds.pick_highlighted_entry, function()
-    if state.picker_win == nil or not vim.api.nvim_win_is_valid(state.picker_win) then
-      error("Cannot pick highlighted entry: picker window is not valid")
+    local entries = state.use_global_context and storage.get_filenames_global()
+      or storage.get_filenames_for_cwd(vim.uv.cwd() --[[@as string]])
+    local index = vim.api.nvim_win_get_cursor(state.picker_win)[1]
+    if index < 1 or index > #entries then
       return
     end
-    local row = vim.api.nvim_win_get_cursor(state.picker_win)[1]
-    actions.pick_file(row)
+    actions.pick_file(index)
   end)
 end
 
