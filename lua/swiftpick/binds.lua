@@ -125,8 +125,8 @@ end
 ---@param buf integer Picker buffer handle.
 ---@return nil
 local function create_prune_empty_keybind(buf)
-  create_local_buffer_keybind(buf, "n", config.values.keybinds.prune_empty, function()
-    actions.prune_empty_entries({ use_global_context = state.use_global_context })
+  create_local_buffer_keybind(buf, "n", config.values.keybinds.prune_entries, function()
+    actions.prune_entries({ use_global_context = state.use_global_context })
   end)
 end
 

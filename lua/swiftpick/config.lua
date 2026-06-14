@@ -40,8 +40,8 @@ M.defaults.keybinds.add_at = "A"
 M.defaults.keybinds.remove = "r"
 ---@type string Keybind to remove the file that the picker was opened from from the picker list at a specific index.
 M.defaults.keybinds.remove_at = "R"
----@type string Keybind to prune all empty entries from the picker list.
-M.defaults.keybinds.prune_empty = "p"
+---@type string Keybind to prune all empty and duplicate entries from the picker list.
+M.defaults.keybinds.prune_entries = "p"
 ---@type string Keybind to enter edit mode for the picker list.
 M.defaults.keybinds.edit_entries = "e"
 ---@type string Keybind to toggle the use of the global storage context for the picker list.

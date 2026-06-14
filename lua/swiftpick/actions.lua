@@ -125,19 +125,19 @@ function M.close_picker()
 end
 
 ---@class SwiftpickPruneOpts
----@field cwd? string The cwd entry to prune empty entries from. Defaults to `vim.uv.cwd()`.
+---@field cwd? string The cwd entry to prune entries from. Defaults to `vim.uv.cwd()`.
 ---@field use_global_context? boolean Whether to use the global context for storage. Defaults to `false`. Overrides `SwiftpickPruneOpts.cwd` if `true`.
 
---- Prune empty entries from the picker list.
+--- Prune empty and duplicate entries from the picker list.
 --- Defaults to pruning the storage context based on plugin state.
 --- @param opts? SwiftpickPruneOpts Options to override default prune behavior.
-function M.prune_empty_entries(opts)
+function M.prune_entries(opts)
   opts = opts or {}
   local cwd = opts.cwd or vim.uv.cwd()
   if opts.use_global_context then
-    storage.prune_empty_global()
+    storage.prune_entries_global()
   else
-    storage.prune_empty_for_cwd(cwd)
+    storage.prune_entries(cwd)
   end
 
   require("swiftpick.window").refresh_picker_window()

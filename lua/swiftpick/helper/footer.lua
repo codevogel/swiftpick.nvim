@@ -25,7 +25,7 @@ local function get_prune_segment(display_entries)
   end
 
   if has_empty then
-    return " • [" .. kb.prune_empty .. "] prune"
+    return " • [" .. kb.prune_entries .. "] prune"
   else
     return ""
   end

@@ -159,9 +159,10 @@ function M.remove_filename_global(filename)
   M.remove_filename_for_cwd(GLOBAL_CWD_EQUIVALENT, filename)
 end
 
----Removes all EMPTY sentinel slots from the stored list for the given cwd.
+---Removes all EMPTY sentinel slots from the stored list for the given cwd,
+---while also deduplicating entries and keeping only the first occurrence.
 ---@param cwd string? Absolute path to the working directory key.
-function M.prune_empty_for_cwd(cwd)
+function M.prune_entries(cwd)
   if cwd == nil or cwd == "" then
     vim.notify("Cannot add file to storage: cwd is nil or empty", vim.log.levels.ERROR)
     return
@@ -172,8 +173,10 @@ function M.prune_empty_for_cwd(cwd)
     return
   end
   local pruned = {}
+  local seen = {}
   for _, entry in ipairs(data[cwd]) do
-    if entry ~= EMPTY() then
+    if entry ~= EMPTY() and not seen[entry] then
+      seen[entry] = true
       table.insert(pruned, entry)
     end
   end
@@ -181,9 +184,10 @@ function M.prune_empty_for_cwd(cwd)
   write_data(data)
 end
 
----Removes all EMPTY sentinel slots from the global file list.
-function M.prune_empty_global()
-  M.prune_empty_for_cwd(GLOBAL_CWD_EQUIVALENT)
+---Removes all EMPTY sentinel slots from the global file list,
+---while also deduplicating entries and keeping only the first occurrence.
+function M.prune_entries_global()
+  M.prune_entries(GLOBAL_CWD_EQUIVALENT)
 end
 
 ---Replaces the entire stored list for the given cwd with `filenames`.
