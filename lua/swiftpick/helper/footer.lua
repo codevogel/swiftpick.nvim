@@ -45,11 +45,14 @@ end
 
 ---Returns `true` when the hint identified by `show_hint_Key` should be displayed.
 ---The master `show_hints.all` flag overrides individual hint flags.
----@param show_hint_Key boolean Individual hint flag value from `config.show_hints`.
+---@param show_specific_hint_key boolean Individual hint flag value from `config.show_hints`.
 ---@return boolean
-local is_hint_enabled = function(show_hint_Key)
-  local show_hints = config.values.show_hints
-  return show_hints.all or show_hint_Key
+local is_hint_enabled = function(show_specific_hint_key)
+  local show_all_hints = config.values.show_hints.all
+  if show_all_hints == nil then
+    return show_specific_hint_key
+  end
+  return show_all_hints
 end
 
 ---@class FooterHelper Helper class for constructing the footer string shown in the picker window.

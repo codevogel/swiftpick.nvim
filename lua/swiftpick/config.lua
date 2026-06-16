@@ -85,7 +85,8 @@ M.defaults.keybinds.pick_entry = {
 ---Options for which hints to show in the picker window. These hints indicate which keybinds to use for different actions, and can be toggled on or off based on user preference.
 ---@class SwiftpickShowHintsOpts
 M.defaults.show_hints = {
-  all = false,
+  ---@type boolean? `all` overrides all other values in this table if not `nil`.
+  all = nil,
   add = true,
   add_at = true,
   remove = true,
