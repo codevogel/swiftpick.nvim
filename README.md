@@ -3,7 +3,7 @@
 `swiftpick.nvim` is a [Neovim](https://neovim.io/) plugin that provides a simple
 and efficient way to quickly switch between files in a project. It's heavily
 inspired by [Harpoon](https://github.com/ThePrimeagen/harpoon/tree/harpoon2),
-with some additions that I find to immensely improve the user experience.
+with some workflow changes that I find to immensely improve the user experience.
 
 ## Features
 
@@ -15,66 +15,136 @@ with some additions that I find to immensely improve the user experience.
 - **Relative or absolute paths**: Toggle how file paths are displayed.
 - **Flexible Hotkey Placement**: Insert or remove files at any hotkey. Entries
   automatically shift, and missing slots are filled as needed.
-- **Prune empty entries**: Remove all empty slots in one action, compacting the
-  list.
+- **Prune entries**: Remove all empty or duplicate slots in one action,
+  compacting the list.
 - **Highly configurable**: Easily change key mappings, picker hints, and more.
 
-## Options
+## Quickstart
+
+This section contains ready-made configurations you can copy and paste straight
+into your Neovim setup.
+
+### `lz.n`
+
+Example configuration for [`lz.n`](https://github.com/lumen-oss/lz.n):
+
+```lua
+return {
+  "swiftpick.nvim",
+  keys = {
+    { "<leader>h", "<CMD>SwiftPick", desc = "Open SwiftPick" },
+    { "<leader>H", "<CMD>SwiftPickGlobal", desc = "Open SwiftPick [Global]" },
+  },
+  after = function()
+    require("swiftpick").setup({
+      -- your options here
+    })
+  end,
+}
+```
+
+### `lazy.nvim`
+
+Example configuration for [`lazy.nvim`](https://github.com/folke/lazy.nvim):
+
+```lua
+return {
+  "codevogel/swiftpick.nvim",
+  opts = {
+      -- your options here
+  },
+  keys = {
+    { "<leader>h", "<CMD>SwiftPick", desc = "Open SwiftPick" },
+    { "<leader>H", "<CMD>SwiftPickGlobal", desc = "Open SwiftPick" },
+  },
+}
+```
+
+### Manual Setup
+
+A minimal manual setup for `swiftpick` is as follows:
+
+```lua
+require("swiftpick").setup({})
+vim.keymap.set("n", "<leader>h", function()
+  require("swiftpick.actions").open_picker()
+end, { desc = "Open SwiftPick" })
+
+-- Optional: Configure an alternative hotkey to open the picker with
+-- the global context as default.
+vim.keymap.set("n", "<leader>H", function()
+  require("swiftpick.actions").open_picker({ use_global_context = true })
+end, { desc = "Open SwiftPick" })
+```
+
+## Configuration
+
+`swiftpick` is designed to work out of the box with zero configuration, but you
+can change it's behavior to fit your workflow. See the tables below (or your
+`lua-ls` type hints!) for a detailed description of what each configuration
+option does.
+
+The options that are of main interest are:
+
+<!-- markdownlint-disable MD013 -->
+
+- `display_absolute_path_by_default`: Whether to show absolute paths in the
+  picker by default.
+- `use_global_context_by_default` and `use_global_context_by_default`: Whether
+  to use the global storage context by default (This sets the context used when
+  `swiftpick` is opened for the first time using `:SwiftPick` or
+  `require("swiftpick.actions").open_picker()`. Individual calls can be
+  overridden with
+  `require("swiftpick.actions").open_picker({ use_global_context = true|false, display_absolute_paths = true|false })`.
+  Note that these overrides do not store the current toggle state in your
+  session.
+- `keybinds`: Keybinds that are available when the picker window is open. Feel
+  free to re-use other keybinds from your config, as they will be overridden in
+  the picker context.
+  - `keybinds.pick_entry.chars` is a `<string, string|nil>` table that takes in
+    a `_<index>` on the lefthand side and a `char` on the righthand side which
+    you want to assign that index to. By default, this makes `<leader>ha` pick
+    the first file, `<leader>hj` the second file, etc. **Note:** Changing these
+    values will automatically update the key hint shown in the picker window as
+    well!
+  - `keybinds.pick_entry.digits` is a similar table, allowing you re-assign the
+    digit mappings. 1-indexed by default, so `<leader>h1` picks the first file,
+    `<leader>h2` picks the second file, etc., but if you really want to 0-index
+    them for some strange reason, you can!
+- `show_hints`: A table that enables / disables keybind-hints for any of the
+  actions available in the picker window. If you already know the keybinds, you
+  can disable them to clean up how the picker window looks. If `all` is `true`,
+  all hints are shown. If `all` is `false`, no hints are shown. Set `all` to
+  `nil` (default) if you want to only show/hide specific hint keys.
+
+<!-- markdownlint-restore -->
 
 The default options for `swiftpick` are as follows:
 
 ```lua
-{
-  -- name of the storage file
-  filename = "swiftpick.json",
-  -- directory where the storage file will be saved
-  storage_path = vim.fn.stdpath("data") .. "/swiftpick/",
-  -- show relative (true) or absolute (false) paths in the picker
-  show_relative_path_by_default = true,
-  -- show global picker (true) or project-specific picker (false)
-  -- by default. can be overridden with a keybind:
-  -- `swiftpick.picker.open_picker({ global_picker = true | false })`
-  global_picker_by_default = false,
-  -- placeholder text for empty entries.
-  -- you can shorten this to something like "<e>" if you tend to
-  -- add empty entries manually
-  empty_entry_identifier = "<empty>",
-  -- whether to automatically create user commands for common picker actions.
-  create_default_user_commands = true,
-  -- the prefix for automatically created user commands.
-  default_user_command_prefix = "SwiftPick",
-  -- built-in keybinds for picker actions.
-  -- these change the hints shown in the picker as well.
+require("swiftpick".setup({
+  filename = "swiftpick.json"
+  storage_path = vim.fn.stdpath("data") .. "/swiftpick/"
+  display_absolute_path_by_default = false
+  use_global_context_by_default = false
+  empty_entry_identifier = "<empty>"
+  create_default_user_commands = true
+  default_user_command_prefix = "SwiftPick"
   keybinds = {
-    -- open the picker
-    open_picker = "<leader>h",
-    -- close the picker (in addition to :q)
-    close_picker = { "q", "<Esc>", "<C-c>" },
-    -- exit edit mode without closing the picker
-    exit_edit_mode = { "q", "<Esc>", "<C-c>" },
-    -- add the current file to the end of the list
-    add = "a",
-    -- add the current file at a hotkey pick_entry hotkey or 1-based index
-    -- (listens for a key to determine where to add the file)
-    add_at = "A",
-    -- remove the currently selected entry
-    remove = "r",
-    -- remove the entry at a hotkey pick_entry hotkey or 1-based index
-    remove_at = "R",
-    -- prune all empty entries from the list
-    prune_empty = "p",
-    -- switch to edit mode, which allows you to edit the file list
-    -- directly, or navigate it's entries with vim motions and pick with 'pick_highlighted_entry'
-    edit_entries = "e",
-    -- toggle between global picker mode and project-specific mode
-    toggle_global_picker = "t",
-    -- toggle between showing relative paths and absolute paths
-    toggle_absolute = "T",
-    -- in edit mode, picks the currently highlighted entry in the picker.
-    pick_highlighted_entry = "<CR>",
-    -- pick the relevant entry from the picker window
+    open_picker = "<leader>h"
+    close_picker = { "q", "<Esc>", "<C-c>" }
+    exit_edit_mode = { "q", "<Esc>", "<C-c>" }
+    add = "a"
+    add_at = "A"
+    remove = "r"
+    remove_at = "R"
+    prune_entries = "p"
+    edit_entries = "e"
+    toggle_use_global_context = "t"
+    toggle_display_absolute_paths = "T"
+    pick_highlighted_entry = "<CR>"
+
     pick_entry = {
-      -- maps character keys to the corresponding pick_entry digit.
       chars = {
         _1 = "h",
         _2 = "j",
@@ -87,7 +157,6 @@ The default options for `swiftpick` are as follows:
         _9 = nil,
         _10 = nil,
       },
-      -- configurable in case you want to 0-index for some reason
       digits = {
         _1 = "1",
         _2 = "2",
@@ -100,27 +169,60 @@ The default options for `swiftpick` are as follows:
         _9 = "9",
         _10 = "0",
       },
-    },
-  },
-  -- which hints to show in the picker window.
-  -- e.g. hints that show the keybinds you have set above.
+    }
+  }
   show_hints = {
-    -- overrides other hint options and shows all hints if set to true.
-    all = false,
+    -- `all` overrides all other values in this table if not `nil`.
+    all = nil,
     add = true,
     add_at = true,
     remove = true,
     remove_at = true,
     prune_empty = true,
-    edit_entries = true,
-    toggle_absolute = false,
-    toggle_global_picker = false,
+    switch_to_edit_mode = true,
+    toggle_display_absolute_paths = false,
+    toggle_use_global_context = false,
     close_picker = true,
     pick_highlighted_entry = true,
     exit_edit_mode = true,
-  },
-}
+  }
+})
 ```
+
+### General Options
+
+<!-- markdownlint-disable MD013 -->
+
+| Option                             | Type      | Default                                   | Description                                                                                                               |
+| ---------------------------------- | --------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `filename`                         | `string`  | `"swiftpick.json"`                        | Name of the JSON file used to store SwiftPick data. Must end with `.json`.                                                |
+| `storage_path`                     | `string`  | `vim.fn.stdpath("data") .. "/swiftpick/"` | Directory where SwiftPick data is stored.                                                                                 |
+| `display_absolute_path_by_default` | `boolean` | `false`                                   | Display absolute paths in the picker by default. When `false`, paths are shown relative to the current working directory. |
+| `use_global_context_by_default`    | `boolean` | `false`                                   | Use the global storage context by default.                                                                                |
+| `empty_entry_identifier`           | `string`  | `"<empty>"`                               | Text used to represent empty entries in the picker.                                                                       |
+| `create_default_user_commands`     | `boolean` | `true`                                    | Create the default SwiftPick user commands automatically.                                                                 |
+| `default_user_command_prefix`      | `string`  | `"SwiftPick"`                             | Prefix used when creating default user commands.                                                                          |
+
+### Keybind options
+
+| Option                                   | Type                         | Default                     | Description                                                  |
+| ---------------------------------------- | ---------------------------- | --------------------------- | ------------------------------------------------------------ |
+| `keybinds.open_picker`                   | `string`                     | `"<leader>h"`               | Open the SwiftPick picker window.                            |
+| `keybinds.close_picker`                  | `string[]`                   | `{ "q", "<Esc>", "<C-c>" }` | Close the picker window.                                     |
+| `keybinds.exit_edit_mode`                | `string[]`                   | `{ "q", "<Esc>", "<C-c>" }` | Exit edit mode.                                              |
+| `keybinds.add`                           | `string`                     | `"a"`                       | Add the current file to the picker list.                     |
+| `keybinds.add_at`                        | `string`                     | `"A"`                       | Add the current file at a specific index.                    |
+| `keybinds.remove`                        | `string`                     | `"r"`                       | Remove the current file from the picker list.                |
+| `keybinds.remove_at`                     | `string`                     | `"R"`                       | Remove a file at a specific index.                           |
+| `keybinds.prune_entries`                 | `string`                     | `"p"`                       | Remove all empty and duplicate entries from the picker list. |
+| `keybinds.edit_entries`                  | `string`                     | `"e"`                       | Enter edit mode.                                             |
+| `keybinds.toggle_use_global_context`     | `string`                     | `"t"`                       | Toggle between local and global storage contexts.            |
+| `keybinds.toggle_display_absolute_paths` | `string`                     | `"T"`                       | Toggle absolute path display.                                |
+| `keybinds.pick_highlighted_entry`        | `string`                     | `"<CR>"`                    | Open the currently highlighted entry while in edit mode.     |
+| `keybinds.pick_entry.chars`              | `table<string, string\|nil>` | See default config          | Map of single-character keys to picker indices.              |
+| `keybinds.pick_entry.digits`             | `table<string, string\|nil>` | See default config          | Map of digit keys to picker indices.                         |
+
+<!-- markdownlint-restore -->
 
 ## Differences with `harpoon`
 
