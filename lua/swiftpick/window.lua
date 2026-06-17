@@ -232,7 +232,7 @@ local function apply_open_picker_overrides(override_opts)
   if
     not display_absolute_paths_overridden and not state.session_memory.default_value_for_display_absolute_paths_set
   then
-    state.display_absolute_paths = not config.values.display_absolute_path_by_default
+    state.display_absolute_paths = config.values.display_absolute_path_by_default
     state.session_memory.default_value_for_display_absolute_paths_set = true
   end
 
