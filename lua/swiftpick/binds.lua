@@ -117,7 +117,7 @@ local function create_remove_at_keybind(buf)
     if not index then
       return
     end
-    actions.remove({ use_global_context = state.use_global_context, index = index })
+    actions.remove({ use_global_context = state.use_global_context, file = index })
   end)
 end
 
