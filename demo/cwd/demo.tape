@@ -1,7 +1,7 @@
 # Where should we write the GIF?
 Output demo.gif 
 
-Set FontSize 14
+Set FontSize 18
 Set FontFamily "JetbrainsMono Nerd Font Mono"
 Set Width 1200
 Set Height 600
