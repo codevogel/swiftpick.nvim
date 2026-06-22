@@ -9,6 +9,19 @@ Demo:
 
 ![Demo of swiftpick.nvim in action](https://raw.githubusercontent.com/codevogel/swiftpick.nvim/refs/heads/main/demo/cwd/demo.gif)
 
+## Table of Contents
+
+- [Features](#features)
+- [Quickstart](#quickstart)
+  - [`lz.n`](#lzn)
+  - [`lazy.nvim`](#lazynvim)
+  - [Manual Setup](#manual-setup)
+- [Configuration](#configuration)
+  - [General Options](#general-options)
+  - [Keybind options](#keybind-options)
+  - [Advanced Configuration Example](#advanced-configuration-example)
+- [Differences with `harpoon`](#differences-with-harpoon)
+
 ## Features
 
 - **Instant File Navigation**: Quickly switch between files in your project with
@@ -228,29 +241,53 @@ require("swiftpick".setup({
 
 <!-- markdownlint-restore -->
 
+### Advanced Configuration Example
+
+Say you want to set up some additional keybinds bypassing the `swiftpick` window
+completely. You could use the
+[`swiftpick.actions`](https://github.com/codevogel/swiftpick.nvim/blob/main/lua/swiftpick/actions.lua)
+module directly.
+
+For example, if you want to add the current file to the first GLOBAL slot, you
+could of course just open the picker in global mode and press `a`, or you could
+set up a keybind to do it for you:
+
+```lua
+vim.keymap.set("n", "<leader>AG", function()
+  require("swiftpick.actions").add_entry(
+    { use_global_context = true, filename = vim.api.nvim_buf_get_name(0) }
+  )
+end, { desc = "[A]dd [G]lobal to swiftpick" })
+```
+
 ## Differences with `harpoon`
 
 Think of `swiftpick` as `harpoon` with visibility built in, and some added
 niceties.
 
 With `harpoon`, you usually jump straight to a file via hotkeys without opening
-any UI. The downside is that it’s easy to forget which key maps to what file.
+any UI. This has the advantage of speed, but the disadvantage of not knowing
+what file is actually bound to which hotkey. If you forget, you have to open the
+UI to check.
 
 `swiftpick` flips that slightly: by default, it always opens a picker to show
-your full file list and bindings, but you can also just ignore these and jump
-instantly like you would in `harpoon` if you already know the shortcut. So you
+your full file list and bindings, but, if you already know what's where, you can
+also just ignore these and jump instantly like you would in `harpoon`. So you
 get both speed _and_ context when you need it.
 
 Additionally, `swiftpick` has a few features that `harpoon` lacks:
 
-Visible hotkey mappings: The picker shows exactly which keys map to which files.
-Global + local contexts: Separate project-specific and cross-project file lists.
-1st-party Lualine integration: Optional status display for current bindings and
-selection.
+- Visible hotkey mappings: The picker shows exactly which keys map to which
+  files.
+- Global + local contexts: Separate project-specific and cross-project file
+  lists.
 
 > But why? I want to jump to files without opening a picker!
 
-Well, you can do that with `swiftpick` too!
+Well, you can do that with `swiftpick` too! It kind of defeats the purpose of
+this plugin, as all you're saving is a single keystroke, but if you really want
+to, you can just set up your keybinds using the `swiftpick.actions` module
+directly, and skip the picker entirely.
 
 > Well... I still don't like it.
 
