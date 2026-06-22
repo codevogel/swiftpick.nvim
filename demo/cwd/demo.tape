@@ -165,7 +165,7 @@ Sleep 1500ms
 Space
 Type "h"
 Sleep 1500ms
-Type "T"
+Type "t"
 Sleep 2000ms
 Type "q"
 Sleep 50ms
@@ -179,9 +179,9 @@ Sleep 1500ms
 Space
 Type "h"
 Sleep 1500ms
-Type "t"
+Type "T"
 Sleep 2000ms
-Type "t"
+Type "T"
 Sleep 1500ms
 Type "q"
 Sleep 50ms

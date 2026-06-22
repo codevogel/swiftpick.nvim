@@ -45,9 +45,9 @@ M.defaults.keybinds.prune_entries = "p"
 ---@type string Keybind to enter edit mode for the picker list.
 M.defaults.keybinds.edit_entries = "e"
 ---@type string Keybind to toggle the use of the global storage context for the picker list.
-M.defaults.keybinds.toggle_use_global_context = "t"
+M.defaults.keybinds.toggle_use_global_context = "T"
 ---@type string Keybind to toggle the display of absolute paths in the picker list.
-M.defaults.keybinds.toggle_display_absolute_paths = "T"
+M.defaults.keybinds.toggle_display_absolute_paths = "t"
 ---@type string Keybind to pick the currently highlighted entry in edit mode.
 M.defaults.keybinds.pick_highlighted_entry = "<CR>"
 
