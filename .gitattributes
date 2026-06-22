@@ -2,3 +2,4 @@
 * text=auto eol=lf
 
 /demo/** export-ignore
+.prettierrc.yaml export-ignore
