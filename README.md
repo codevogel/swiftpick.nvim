@@ -5,6 +5,10 @@ and efficient way to quickly switch between files in a project. It's heavily
 inspired by [Harpoon](https://github.com/ThePrimeagen/harpoon/tree/harpoon2),
 with some workflow changes that I find to immensely improve the user experience.
 
+Demo:
+
+![Demo of swiftpick.nvim in action](https://raw.githubusercontent.com/codevogel/swiftpick.nvim/refs/heads/main/demo/cwd/demo.gif)
+
 ## Features
 
 - **Instant File Navigation**: Quickly switch between files in your project with
@@ -216,8 +220,8 @@ require("swiftpick".setup({
 | `keybinds.remove_at`                     | `string`                     | `"R"`                       | Remove a file at a specific index.                           |
 | `keybinds.prune_entries`                 | `string`                     | `"p"`                       | Remove all empty and duplicate entries from the picker list. |
 | `keybinds.edit_entries`                  | `string`                     | `"e"`                       | Enter edit mode.                                             |
-| `keybinds.toggle_use_global_context`     | `string`                     | `"t"`                       | Toggle between local and global storage contexts.            |
-| `keybinds.toggle_display_absolute_paths` | `string`                     | `"T"`                       | Toggle absolute path display.                                |
+| `keybinds.toggle_use_global_context`     | `string`                     | `"T"`                       | Toggle between local and global storage contexts.            |
+| `keybinds.toggle_display_absolute_paths` | `string`                     | `"t"`                       | Toggle absolute path display.                                |
 | `keybinds.pick_highlighted_entry`        | `string`                     | `"<CR>"`                    | Open the currently highlighted entry while in edit mode.     |
 | `keybinds.pick_entry.chars`              | `table<string, string\|nil>` | See default config          | Map of single-character keys to picker indices.              |
 | `keybinds.pick_entry.digits`             | `table<string, string\|nil>` | See default config          | Map of digit keys to picker indices.                         |

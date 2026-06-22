@@ -1,0 +1,66 @@
+welcome to the demo for swiftpick.nvim!
+
+swiftpick is a file picker that makes it trivial
+to work on multiple files at the same time.
+
+if you know harpoon, it's very similar,
+but with some adjustments that provide a better UX
+
+each working directory has its own file-switching context.
+or, we can pick from a global context (available from any dir)
+
+here's some examples.
+
+1.  opening the swiftpick window
+
+    <leader>h
+
+with the window open, we can perform any of the following actions:
+
+2.  adding the current file (swiftpick-demo) to swiftpick
+
+    a
+
+3.  switch files
+       note that the picker window highlights shows the keybind
+       and index for the corresponding file.
+
+    <index | entry keybind>     (e.g. h or 1, j or 3 )
+
+    first we'll switch slowly from top-to-bottom so you can follow along,
+    then we'll gradually speed up to show it's speed.
+
+5.  removing the current file from swiftpick
+
+    r
+
+6.  inserting the current file at a specific entry
+       note that the other entries shift down to accomodate
+       its new position.
+
+    A then <index | entry keybind>   (e.g. Ah, A3)
+
+7.  similarly, we can remove entries at specific keybinds
+
+    R then <index | entry keybind>   (e.g. Rh, R3)
+
+8.  toggle between relative and absolute path display:
+
+    t
+
+9.  toggle between local and global context
+
+    T
+
+10. edit the picker like any other neovim buffer
+       this allows us to pick an entry by highlighted line,
+       swap entries around, or remove/edit them. 
+
+    e
+
+we can set also do much more, like setup custom keybinds that,
+    e.g. open the picker in global context mode
+         or add all files in the current cwd
+
+swiftpick is awesome. try it today!
+- codevogel
