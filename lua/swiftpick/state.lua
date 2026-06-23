@@ -48,8 +48,12 @@ M.session_memory = {
 ---@return nil
 M.initialize = function()
   M.edit_mode = false
-  M.display_absolute_paths = M.display_absolute_paths or config.values.display_absolute_path_by_default
-  M.use_global_context = M.use_global_context or config.values.use_global_context_by_default
+  if M.display_absolute_paths == nil then
+    M.display_absolute_paths = config.values.display_absolute_path_by_default
+  end
+  if M.use_global_context == nil then
+    M.use_global_context = config.values.use_global_context_by_default
+  end
 end
 
 return M
