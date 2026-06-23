@@ -195,7 +195,7 @@ function M.pick_file(file, opts)
   opts = opts or {}
 
   local cwd = opts.cwd or vim.uv.cwd()
-  local use_global_context = opts.use_global_context or false
+  local use_global_context = opts.use_global_context or state.use_global_context
 
   -- Parse the filepath from file as either a 1-based index or a filename string
   local filepath = file
