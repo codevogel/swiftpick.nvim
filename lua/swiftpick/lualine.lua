@@ -34,7 +34,8 @@ local defaults = {
   local_indicator = "󰟙",
   local_indicator_active = "!",
   local_prefix = " ",
-  local_suffix = "   ",
+  local_suffix = "",
+  local_global_separator = "   ",
   global_indicator = "",
   global_indicator_active = "!",
   global_prefix = " ",
@@ -44,14 +45,18 @@ local defaults = {
   empty_entry = "",
   concat_separator = " ",
   use_digits = false,
+  only_show_active_context = false,
 }
 
 ---@class SwiftpickLualineComponentOpts
 ---@field prefix string|nil Icon to display as indicator for the swiftpick component.
----@field local_indicator string|nil Indicator to display before the local shortcuts.
+---@field local_indicator string|nil Indicator to display before the local shortcuts. (This is never shown when `only_show_active_context` is true.)
+---@field local_indicator_active string|nil Indicator to display before the local shortcuts when the context is active.
 ---@field local_prefix string|nil Prefix to display before the local shortcuts.
 ---@field local_suffix string|nil Suffix to display after the local shortcuts.
----@field global_indicator string|nil Indicator to display before the global shortcuts.
+---@field local_global_separator string|nil Separator to display between the local and global segments. Not used if `only_show_active_context` is true.
+---@field global_indicator string|nil Indicator to display before the global shortcuts. (This is never shown when `only_show_active_context` is true.)
+---@field global_indicator_active string|nil Indicator to display before the global shortcuts when the context is active.
 ---@field global_prefix string|nil Prefix to display before the global shortcuts.
 ---@field global_suffix string|nil Suffix to display after the global shortcuts.
 ---@field active_prefix string|nil Prefix to display before a shortcut when the file is active.
@@ -59,8 +64,10 @@ local defaults = {
 ---@field empty_entry string|nil String to display for an empty entry in the shortcuts list.
 ---@field concat_separator string|nil Separator to use when concatenating the shortcuts list.
 ---@field use_digits boolean|nil Whether to use digits instead of characters for the shortcuts list.
+---@field only_show_active_context boolean|nil Whether to only show the keybinds for the active context.
 
----@param opts? { icon?: string }
+--- Creates a lualine component function for the swiftpick plugin.
+---@param opts? SwiftpickLualineComponentOpts Options for the lualine component.
 function M.component(opts)
   local values = vim.tbl_deep_extend("force", defaults, opts or {})
 
@@ -71,12 +78,33 @@ function M.component(opts)
     local shortcuts_local_string = get_shortcuts_string(files_local, values)
     local shortcuts_global_string = get_shortcuts_string(files_global, values)
 
+    if values.only_show_active_context then
+      if state.use_global_context then
+        return ("%s%s%s%s%s"):format(
+          values.prefix,
+          values.global_indicator_active,
+          values.global_prefix,
+          shortcuts_global_string,
+          values.global_suffix
+        )
+      else
+        return ("%s%s%s%s%s"):format(
+          values.prefix,
+          values.local_indicator_active,
+          values.local_prefix,
+          shortcuts_local_string,
+          values.local_suffix
+        )
+      end
+    end
+
     return ("%s%s%s%s%s%s%s%s%s"):format(
       values.prefix,
       state.use_global_context and values.local_indicator or values.local_indicator_active,
       values.local_prefix,
       shortcuts_local_string,
       values.local_suffix,
+      values.local_global_separator,
       state.use_global_context and values.global_indicator_active or values.global_indicator,
       values.global_prefix,
       shortcuts_global_string,
