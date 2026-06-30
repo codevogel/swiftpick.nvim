@@ -160,8 +160,8 @@ require("swiftpick".setup({
     remove_at = "R"
     prune_entries = "p"
     edit_entries = "e"
-    toggle_use_global_context = "t"
-    toggle_display_absolute_paths = "T"
+    toggle_use_global_context = "T"
+    toggle_display_absolute_paths = "t"
     pick_highlighted_entry = "<CR>"
 
     pick_entry = {
