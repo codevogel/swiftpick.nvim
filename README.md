@@ -20,6 +20,7 @@ Demo:
   - [General Options](#general-options)
   - [Keybind options](#keybind-options)
   - [Advanced Configuration Example](#advanced-configuration-example)
+  - [Lualine Integration](#lualine-integration)
 - [Differences with `harpoon`](#differences-with-harpoon)
 
 ## Features
@@ -35,6 +36,8 @@ Demo:
 - **Prune entries**: Remove all empty or duplicate slots in one action,
   compacting the list.
 - **Highly configurable**: Easily change key mappings, picker hints, and more.
+- **Built-in lualine support**: See your currently available keybinds in the
+  statusline.
 
 ## Quickstart
 
@@ -258,6 +261,91 @@ vim.keymap.set("n", "<leader>AG", function()
     { use_global_context = true, filename = vim.api.nvim_buf_get_name(0) }
   )
 end, { desc = "[A]dd [G]lobal to swiftpick" })
+```
+
+### Lualine Integration
+
+`swiftpick` has built-in support for
+[lualine.nvim](https://github.com/nvim-lualine/lualine.nvim).
+
+You can enable it by adding a component
+`{ require("swiftpick.lualine").component() }` to one of your lualine sections.
+For example,
+
+```lua
+return {
+  {
+    "lualine.nvim",
+    after = function()
+      -- we have to ensure swiftpick is loaded before we can use it in lualine
+      require("lz.n").trigger_load("swiftpick")       require("lualine").setup({
+        options = {
+          -- your opts here
+        },
+        sections = {
+          -- here we add the swiftpick component to the `lualine_c` section,
+          -- after the `filename` component:
+          lualine_c = {
+            "filename",
+            { require("swiftpick.lualine").component() },
+          },
+        },
+      })
+    end,
+  },
+}
+```
+
+The lualine component is highly configurable to make it look just like you want
+it to look. You can pass any of the below options to
+`require("swiftpick.lualine").component(opts)` to customize the appearance of
+the component.
+
+The default appearance is shown in the demo gif above.
+
+```lua
+---@class SwiftpickLualineComponentOpts
+---@field prefix string|nil Icon to display as indicator for the swiftpick component.
+---@field local_indicator string|nil Indicator to display before the local shortcuts. (This is never shown when `only_show_active_context` is true.)
+---@field local_indicator_active string|nil Indicator to display before the local shortcuts when the context is active.
+---@field local_prefix string|nil Prefix to display before the local shortcuts.
+---@field local_suffix string|nil Suffix to display after the local shortcuts.
+---@field local_global_separator string|nil Separator to display between the local and global segments. Not used if `only_show_active_context` is true.
+---@field global_indicator string|nil Indicator to display before the global shortcuts. (This is never shown when `only_show_active_context` is true.)
+---@field global_indicator_active string|nil Indicator to display before the global shortcuts when the context is active.
+---@field global_prefix string|nil Prefix to display before the global shortcuts.
+---@field global_suffix string|nil Suffix to display after the global shortcuts.
+---@field active_prefix string|nil Prefix to display before a shortcut when the file is active.
+---@field active_suffix string|nil Suffix to display after a shortcut when the file is active.
+---@field empty_entry string|nil String to display for an empty entry in the shortcuts list.
+---@field concat_separator string|nil Separator to use when concatenating the shortcuts list.
+---@field use_digits boolean|nil Whether to use digits instead of characters for the shortcuts list.
+---@field only_show_active_context boolean|nil Whether to only show the keybinds for the active context.
+```
+
+With these defaults (some of the below icons may not render properly in your
+browser as they use glyphs from a [Nerd Font](https://www.nerdfonts.com/)):
+
+```lua
+---@type SwiftpickLualineComponentOpts
+local defaults = {
+  prefix = "󱗆  ",
+  local_indicator = "󰟙",
+  local_indicator_active = "!",
+  local_prefix = " ",
+  local_suffix = "",
+  local_global_separator = "   ",
+  global_indicator = "",
+  global_indicator_active = "!",
+  global_prefix = " ",
+  global_suffix = "",
+  active_prefix = "[",
+  active_suffix = "]",
+  empty_entry = "",
+  concat_separator = " ",
+  use_digits = false,
+  only_show_active_context = false,
+}
 ```
 
 ## Differences with `harpoon`
