@@ -19,7 +19,7 @@ with the window open, we can perform any of the following actions:
 
 2.  adding the current file (swiftpick-demo) to swiftpick
 
-    a
+    a            (note the lualine component below, showing the new bind!)
 
 3.  switch files
        note that the picker window highlights shows the keybind
